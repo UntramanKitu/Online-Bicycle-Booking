@@ -1,0 +1,228 @@
+:root {
+  --bg: #f5f7fa;
+  --surface: #ffffff;
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --danger: #ef4444;
+  --danger-hover: #dc2626;
+  --text: #1e293b;
+  --text-secondary: #64748b;
+  --border: #e2e8f0;
+  --radius: 8px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+header {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+header h1 {
+  font-size: 1.5rem;
+  margin-bottom: 16px;
+  color: var(--primary);
+}
+
+nav {
+  display: flex;
+  gap: 8px;
+}
+
+nav button {
+  padding: 10px 20px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+  color: var(--text-secondary);
+}
+
+nav button:hover {
+  background: #f1f5f9;
+  color: var(--text);
+}
+
+nav button.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.manager {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.manager h2 {
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+  color: var(--text);
+}
+
+.error {
+  background: #fef2f2;
+  color: var(--danger);
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.form label:nth-child(n+4):nth-child(-n+5),
+.form label:has(textarea),
+.form label:has(input[type="file"]) {
+  grid-column: 1 / -1;
+}
+
+.form input,
+.form select,
+.form textarea {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  background: white;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.form textarea { resize: vertical; }
+.form input[type="file"] { padding: 6px; }
+.form-actions { grid-column: 1 / -1; display: flex; gap: 8px; margin-top: 4px; }
+
+.form-actions button {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  background: var(--primary);
+  color: white;
+  transition: background 0.2s;
+}
+
+.form-actions button:hover { background: var(--primary-hover); }
+.form-actions button[type="button"] { background: var(--text-secondary); }
+.form-actions button[type="button"]:hover { background: #475569; }
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+th, td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+th {
+  background: #f8fafc;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+tr:hover td { background: #f1f5f9; }
+
+.actions { display: flex; gap: 4px; }
+
+.actions button {
+  padding: 4px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  background: #e0e7ff;
+  color: var(--primary);
+  transition: background 0.2s;
+}
+
+.actions button:hover { background: #c7d2fe; }
+.actions button.danger { background: #fee2e2; color: var(--danger); }
+.actions button.danger:hover { background: #fecaca; }
+
+.thumb {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 4px;
+  margin: 2px;
+  border: 1px solid var(--border);
+}
+
+.filter-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.filter-form input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.filter-form button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background: var(--primary);
+  color: white;
+  font-size: 0.9rem;
+}
