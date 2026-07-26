@@ -59,27 +59,24 @@ class DamageEvidenceResponse(DamageEvidenceBase):
     model_config = {"from_attributes": True}
 
 
-# ===== Penalty Strike =====
-class PenaltyStrikeBase(BaseModel):
+# ===== Favorite =====
+class FavoriteBase(BaseModel):
     user_id: str
-    return_id: Optional[int] = None
-    points: int = 1
-    reason: str
+    favorite_type: str
+    favorite_id: str
+    nickname: Optional[str] = None
 
 
-class PenaltyStrikeCreate(PenaltyStrikeBase):
+class FavoriteCreate(FavoriteBase):
     pass
 
 
-class PenaltyStrikeUpdate(BaseModel):
-    points: Optional[int] = None
-    reason: Optional[str] = None
-    status: Optional[str] = None
+class FavoriteUpdate(BaseModel):
+    nickname: Optional[str] = None
 
 
-class PenaltyStrikeResponse(PenaltyStrikeBase):
+class FavoriteResponse(FavoriteBase):
     id: int
-    status: str
     created_at: datetime
     updated_at: datetime
 

@@ -29,11 +29,11 @@ export const damagesApi = {
   delete: (id) => request(`${API}/damages/${id}`, { method: 'DELETE' }),
 }
 
-export const penaltiesApi = {
-  list: () => request(`${API}/penalties/`),
-  get: (id) => request(`${API}/penalties/${id}`),
-  getUserPenalties: (userId) => request(`${API}/penalties/user/${userId}`),
-  create: (data) => request(`${API}/penalties/`, { method: 'POST', body: JSON.stringify(data) }),
-  update: (id, data) => request(`${API}/penalties/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: (id) => request(`${API}/penalties/${id}`, { method: 'DELETE' }),
+export const favoritesApi = {
+  list: () => request(`${API}/favorites/`),
+  get: (id) => request(`${API}/favorites/${id}`),
+  listByUser: (userId) => request(`${API}/favorites/user/${userId}`),
+  create: (data) => request(`${API}/favorites/`, { method: 'POST', body: JSON.stringify(data) }),
+  update: (id, data) => request(`${API}/favorites/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id) => request(`${API}/favorites/${id}`, { method: 'DELETE' }),
 }

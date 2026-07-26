@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 import os
 
 from database import engine, Base
-from routers import returns, damages, penalties
+from routers import returns, damages, favorites
 
 Base.metadata.create_all(bind=engine)
 
@@ -24,7 +24,7 @@ app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 
 app.include_router(returns.router)
 app.include_router(damages.router)
-app.include_router(penalties.router)
+app.include_router(favorites.router)
 
 
 @app.get("/")

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, Float, ForeignKey, Enum as SAEnum
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Enum as SAEnum
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 import enum
@@ -10,12 +10,6 @@ class ReturnStatus(str, enum.Enum):
     ON_TIME = "on_time"
     LATE = "late"
     DAMAGED = "damaged"
-
-
-class PenaltyStatus(str, enum.Enum):
-    ACTIVE = "active"
-    APPEALED = "appealed"
-    REMOVED = "removed"
 
 
 class ReturnRecord(Base):
@@ -32,7 +26,6 @@ class ReturnRecord(Base):
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     damages = relationship("DamageEvidence", back_populates="return_record", cascade="all, delete-orphan")
-    penalties = relationship("PenaltyStrike", back_populates="return_record", cascade="all, delete-orphan")
 
 
 class DamageEvidence(Base):
@@ -49,16 +42,13 @@ class DamageEvidence(Base):
     return_record = relationship("ReturnRecord", back_populates="damages")
 
 
-class PenaltyStrike(Base):
-    __tablename__ = "penalty_strikes"
+class Favorite(Base):
+    __tablename__ = "favorites"
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(String(50), nullable=False, index=True)
-    return_id = Column(Integer, ForeignKey("return_records.id", ondelete="SET NULL"), nullable=True)
-    points = Column(Integer, nullable=False, default=1)
-    reason = Column(Text, nullable=False)
-    status = Column(SAEnum(PenaltyStatus), default=PenaltyStatus.ACTIVE)
+    favorite_type = Column(String(20), nullable=False)
+    favorite_id = Column(String(100), nullable=False)
+    nickname = Column(String(100), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
-
-    return_record = relationship("ReturnRecord", back_populates="penalties")
