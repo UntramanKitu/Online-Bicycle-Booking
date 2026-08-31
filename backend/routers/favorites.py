@@ -5,6 +5,7 @@ from typing import List
 from database import get_db
 from models import Favorite
 from schemas import FavoriteCreate, FavoriteUpdate, FavoriteResponse
+from utils import resolve_user, resolve_bicycle
 
 router = APIRouter(prefix="/api/favorites", tags=["Favorites"])
 
@@ -23,7 +24,7 @@ def get_favorite(favorite_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/user/{user_id}", response_model=List[FavoriteResponse])
-def list_user_favorites(user_id: str, db: Session = Depends(get_db)):
+def list_user_favorites(user_id: int, db: Session = Depends(get_db)):
     return db.query(Favorite).filter(
         Favorite.user_id == user_id
     ).order_by(Favorite.created_at.desc()).all()
@@ -31,7 +32,12 @@ def list_user_favorites(user_id: str, db: Session = Depends(get_db)):
 
 @router.post("/", response_model=FavoriteResponse, status_code=201)
 def create_favorite(data: FavoriteCreate, db: Session = Depends(get_db)):
-    record = Favorite(**data.model_dump())
+    user = resolve_user(data.user_id, db)
+    payload = {**data.model_dump(), "user_id": user.id}
+    if data.bicycle_id is not None:
+        bike = resolve_bicycle(data.bicycle_id, db)
+        payload["bicycle_id"] = bike.id
+    record = Favorite(**payload)
     db.add(record)
     db.commit()
     db.refresh(record)

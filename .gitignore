@@ -22,3 +22,6 @@ backend/uploads/
 
 # Logs
 *.log
+
+# Documentation (local only)
+*.md

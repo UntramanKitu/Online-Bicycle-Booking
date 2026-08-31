@@ -1,0 +1,56 @@
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from typing import List
+
+from database import get_db
+from models import LostItem
+from schemas import LostItemCreate, LostItemUpdate, LostItemResponse
+from utils import resolve_user, resolve_bicycle
+
+router = APIRouter(prefix="/api/lost-items", tags=["Lost Items"])
+
+
+@router.get("/", response_model=List[LostItemResponse])
+def list_lost_items(db: Session = Depends(get_db)):
+    return db.query(LostItem).order_by(LostItem.created_at.desc()).all()
+
+
+@router.get("/{item_id}", response_model=LostItemResponse)
+def get_lost_item(item_id: int, db: Session = Depends(get_db)):
+    record = db.query(LostItem).filter(LostItem.id == item_id).first()
+    if not record:
+        raise HTTPException(status_code=404, detail="Lost item not found")
+    return record
+
+
+@router.post("/", response_model=LostItemResponse, status_code=201)
+def create_lost_item(data: LostItemCreate, db: Session = Depends(get_db)):
+    user = resolve_user(data.user_id, db)
+    bike = resolve_bicycle(data.bicycle_id, db)
+    payload = {**data.model_dump(), "user_id": user.id, "bicycle_id": bike.id}
+    record = LostItem(**payload)
+    db.add(record)
+    db.commit()
+    db.refresh(record)
+    return record
+
+
+@router.put("/{item_id}", response_model=LostItemResponse)
+def update_lost_item(item_id: int, data: LostItemUpdate, db: Session = Depends(get_db)):
+    record = db.query(LostItem).filter(LostItem.id == item_id).first()
+    if not record:
+        raise HTTPException(status_code=404, detail="Lost item not found")
+    for key, value in data.model_dump(exclude_unset=True).items():
+        setattr(record, key, value)
+    db.commit()
+    db.refresh(record)
+    return record
+
+
+@router.delete("/{item_id}", status_code=204)
+def delete_lost_item(item_id: int, db: Session = Depends(get_db)):
+    record = db.query(LostItem).filter(LostItem.id == item_id).first()
+    if not record:
+        raise HTTPException(status_code=404, detail="Lost item not found")
+    db.delete(record)
+    db.commit()

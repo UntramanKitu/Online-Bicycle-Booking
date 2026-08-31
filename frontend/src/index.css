@@ -226,3 +226,28 @@ tr:hover td { background: #f1f5f9; }
   color: white;
   font-size: 0.9rem;
 }
+
+.form-3col {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.success-msg {
+  background: #ecfdf5;
+  color: #065f46;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.filter-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  flex: 1;
+}

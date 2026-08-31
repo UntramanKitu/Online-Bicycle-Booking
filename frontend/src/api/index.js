@@ -13,22 +13,6 @@ async function request(url, options = {}) {
   return res.json()
 }
 
-export const returnsApi = {
-  list: () => request(`${API}/returns/`),
-  get: (id) => request(`${API}/returns/${id}`),
-  create: (data) => request(`${API}/returns/`, { method: 'POST', body: JSON.stringify(data) }),
-  update: (id, data) => request(`${API}/returns/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: (id) => request(`${API}/returns/${id}`, { method: 'DELETE' }),
-}
-
-export const damagesApi = {
-  list: () => request(`${API}/damages/`),
-  get: (id) => request(`${API}/damages/${id}`),
-  create: (formData) => fetch(`${API}/damages/`, { method: 'POST', body: formData }).then(r => r.json()),
-  update: (id, formData) => fetch(`${API}/damages/${id}`, { method: 'PUT', body: formData }).then(r => r.json()),
-  delete: (id) => request(`${API}/damages/${id}`, { method: 'DELETE' }),
-}
-
 export const favoritesApi = {
   list: () => request(`${API}/favorites/`),
   get: (id) => request(`${API}/favorites/${id}`),
@@ -36,4 +20,27 @@ export const favoritesApi = {
   create: (data) => request(`${API}/favorites/`, { method: 'POST', body: JSON.stringify(data) }),
   update: (id, data) => request(`${API}/favorites/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id) => request(`${API}/favorites/${id}`, { method: 'DELETE' }),
+}
+
+export const penaltiesApi = {
+  list: () => request(`${API}/penalties/`),
+  get: (id) => request(`${API}/penalties/${id}`),
+  listByUser: (userId) => request(`${API}/penalties/user/${userId}`),
+  create: (data) => request(`${API}/penalties/`, { method: 'POST', body: JSON.stringify(data) }),
+  update: (id, data) => request(`${API}/penalties/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id) => request(`${API}/penalties/${id}`, { method: 'DELETE' }),
+}
+
+export const lostItemsApi = {
+  list: () => request(`${API}/lost-items/`),
+  get: (id) => request(`${API}/lost-items/${id}`),
+  create: (data) => request(`${API}/lost-items/`, { method: 'POST', body: JSON.stringify(data) }),
+  update: (id, data) => request(`${API}/lost-items/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id) => request(`${API}/lost-items/${id}`, { method: 'DELETE' }),
+}
+
+export const pointsApi = {
+  list: () => request(`${API}/points/`),
+  listByUser: (userId) => request(`${API}/points/user/${userId}`),
+  add: (data) => request(`${API}/points/add`, { method: 'POST', body: JSON.stringify(data) }),
 }
