@@ -1,4 +1,4 @@
-from app.modules.chaiyanan.support_tickets.router import *
+from app.modules.chaianan.support_tickets.router import *
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional

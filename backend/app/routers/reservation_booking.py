@@ -1,4 +1,4 @@
-from app.modules.chaiyanan.reservation_booking.router import *
+from app.modules.chaianan.reservation_booking.router import *
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional

@@ -1,4 +1,4 @@
-from app.modules.chaiyanan.group_ride_bookings.crud import *
+from app.modules.chaianan.group_ride_bookings.crud import *
 """CRUD สำหรับ Group Ride Bookings (ตารางกลุ่มปั่นร่วมกัน) — นายชัยอนันต์
 
 ครอบคลุม spec CRUD ในเอกสาร:

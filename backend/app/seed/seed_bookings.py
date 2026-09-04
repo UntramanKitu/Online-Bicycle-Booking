@@ -19,7 +19,7 @@ from app.database import SessionLocal
 from app.crud.booking import (
     create_booking, create_usage_history, create_ticket,
 )
-from app.modules.chaiyanan.group_ride_bookings.crud import create_group_ride, join_group_ride
+from app.modules.chaianan.group_ride_bookings.crud import create_group_ride, join_group_ride
 from app.schemas.booking import (
     ReservationBookingCreate, UsageHistoryLogCreate, SupportTicketCreate,
 )

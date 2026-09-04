@@ -1,4 +1,4 @@
-from app.modules.chaiyanan.group_ride_bookings.router import *
+from app.modules.chaianan.group_ride_bookings.router import *
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
