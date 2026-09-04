@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api, getApiError } from '../../../api'
-import { toIso } from '../../../utils'
+import { formatDateTime, toIso } from '../../../utils'
 import { useCurrentUser } from '../../../context/CurrentUserContext'
 
 function BikeIcon() {
@@ -14,6 +14,7 @@ function BikeIcon() {
 export default function BookingsPage() {
   const { userId } = useCurrentUser()
   const [bikes, setBikes] = useState([])
+  const [myBookings, setMyBookings] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedBike, setSelectedBike] = useState(null)
   const [duration, setDuration] = useState('30')
@@ -25,8 +26,12 @@ export default function BookingsPage() {
   async function load() {
     setLoading(true)
     try {
-      const bicycleRes = await api.get('/bicycles')
+      const [bicycleRes, bookingRes] = await Promise.all([
+        api.get('/bicycles'),
+        api.get('/bookings', { params: { user_id: userId } }),
+      ])
       setBikes(bicycleRes.data)
+      setMyBookings(bookingRes.data)
     } catch (err) {
       setMessage({ type: 'error', text: getApiError(err) })
     } finally {
@@ -37,7 +42,17 @@ export default function BookingsPage() {
   useEffect(() => {
     const timer = window.setTimeout(load, 0)
     return () => window.clearTimeout(timer)
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function updateBookingState(id, action) {
+    setMessage(null)
+    try {
+      await api.post(`/bookings/${id}/${action}`, null, { params: { user_id: userId } })
+      await load()
+    } catch (err) {
+      setMessage({ type: 'error', text: getApiError(err) })
+    }
+  }
 
   async function handleCreate(e) {
     e.preventDefault()
@@ -97,6 +112,17 @@ export default function BookingsPage() {
           })}
         </div>
       )}
+      <section className="my-bookings">
+        <div className="booking-heading"><h2>การจองของฉัน</h2><p>ติดตามสถานะและจัดการการยืมจักรยาน</p></div>
+        {myBookings.length === 0 ? <p className="empty">ยังไม่มีการจอง</p> : myBookings.map((booking) => <article className="my-booking" key={booking.id}>
+          <div><strong>จักรยาน #{booking.bicycle_id}</strong><span>{formatDateTime(booking.start_time)} - {formatDateTime(booking.end_time)}</span></div>
+          <span className={`status-pill ${booking.status === 'completed' ? 'free' : 'busy'}`}>{booking.status}</span>
+          <div className="booking-actions">
+            {['pending', 'confirmed'].includes(booking.status) && <><button className="btn btn-primary btn-sm" onClick={() => updateBookingState(booking.id, 'borrow')}>รับรถ</button><button className="btn btn-ghost btn-sm" onClick={() => updateBookingState(booking.id, 'cancel')}>ยกเลิก</button></>}
+            {booking.status === 'in_progress' && <button className="btn btn-primary btn-sm" onClick={() => updateBookingState(booking.id, 'return')}>คืนรถ</button>}
+          </div>
+        </article>)}
+      </section>
       {selectedBike && <form className="booking-modal" onSubmit={handleCreate}>
         <div className="modal-card">
           <button type="button" className="modal-close" onClick={() => setSelectedBike(null)} aria-label="ปิด">×</button>

@@ -60,8 +60,15 @@ def update_existing_ticket(ticket_id: int, ticket: SupportTicketUpdate, db: Sess
 
 
 @router.delete("/tickets/{ticket_id}", status_code=204)
-def delete_existing_ticket(ticket_id: int, db: Session = Depends(get_db)):
-    deleted = delete_ticket(db, ticket_id)
+def delete_existing_ticket(
+    ticket_id: int,
+    user_id: Optional[int] = Query(None, description="ID เจ้าของคำร้อง"),
+    db: Session = Depends(get_db),
+):
+    try:
+        deleted = delete_ticket(db, ticket_id, user_id)
+    except ValueError as e:
+        raise HTTPException(status_code=403, detail=str(e))
     if not deleted:
         raise HTTPException(status_code=404, detail="Ticket not found")
     return None

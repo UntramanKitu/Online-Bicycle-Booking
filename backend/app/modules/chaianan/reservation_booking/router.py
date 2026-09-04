@@ -5,9 +5,11 @@ from datetime import datetime
 from app.database import get_db
 from app.crud.booking import (
     BookingConflictError,
+    BookingStateError,
     get_booking, get_bookings, get_bookings_by_user, get_bookings_by_bicycle,
     get_bookings_by_status, get_bookings_in_date_range,
     create_booking, update_booking, delete_booking,
+    change_booking_state,
 )
 from app.schemas.booking import (
     ReservationBookingCreate, ReservationBookingUpdate, ReservationBookingResponse,
@@ -73,3 +75,51 @@ def delete_existing_booking(booking_id: int, db: Session = Depends(get_db)):
     if not deleted:
         raise HTTPException(status_code=404, detail="Booking not found")
     return None
+
+
+@router.post("/bookings/{booking_id}/borrow", response_model=ReservationBookingResponse)
+def borrow_booking(
+    booking_id: int,
+    user_id: int = Query(..., description="ID ผู้จอง"),
+    db: Session = Depends(get_db),
+):
+    """รับจักรยานจริง: pending/confirmed -> in_progress"""
+    try:
+        booking = change_booking_state(db, booking_id, user_id, "in_progress")
+    except BookingStateError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    if booking is None:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    return booking
+
+
+@router.post("/bookings/{booking_id}/return", response_model=ReservationBookingResponse)
+def return_booking(
+    booking_id: int,
+    user_id: int = Query(..., description="ID ผู้จอง"),
+    db: Session = Depends(get_db),
+):
+    """คืนจักรยาน: in_progress -> completed"""
+    try:
+        booking = change_booking_state(db, booking_id, user_id, "completed")
+    except BookingStateError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    if booking is None:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    return booking
+
+
+@router.post("/bookings/{booking_id}/cancel", response_model=ReservationBookingResponse)
+def cancel_booking(
+    booking_id: int,
+    user_id: int = Query(..., description="ID ผู้จอง"),
+    db: Session = Depends(get_db),
+):
+    """ยกเลิกการจองก่อนเริ่มยืม: pending/confirmed -> cancelled"""
+    try:
+        booking = change_booking_state(db, booking_id, user_id, "cancelled")
+    except BookingStateError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    if booking is None:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    return booking

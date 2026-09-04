@@ -75,7 +75,7 @@ export default function TicketsPage() {
     if (!window.confirm('ลบคำร้องนี้หรือไม่?')) return
     setMessage(null)
     try {
-      await api.delete(`/tickets/${id}`)
+      await api.delete(`/tickets/${id}`, { params: { user_id: userId } })
       load()
     } catch (err) {
       setMessage({ type: 'error', text: getApiError(err) })

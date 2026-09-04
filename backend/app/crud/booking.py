@@ -18,6 +18,10 @@ class BookingConflictError(Exception):
     """จักรยานไม่ว่างในช่วงเวลาที่ขอจอง (Availability) — เปลี่ยนเป็น HTTPException 409 ที่ router"""
 
 
+class BookingStateError(Exception):
+    """การเปลี่ยนสถานะ booking ไม่เป็นไปตาม lifecycle ที่กำหนด"""
+
+
 # ==================== ReservationBooking CRUD ====================
 
 def check_booking_availability(
@@ -241,10 +245,43 @@ def update_ticket(db: Session, ticket_id: int, ticket: SupportTicketUpdate) -> O
     return db_ticket
 
 
-def delete_ticket(db: Session, ticket_id: int) -> bool:
+def delete_ticket(db: Session, ticket_id: int, user_id: Optional[int] = None) -> bool:
     db_ticket = get_ticket(db, ticket_id)
     if db_ticket is None:
         return False
+    if user_id is not None and db_ticket.user_id != user_id:
+        raise ValueError("คุณไม่มีสิทธิ์ลบคำร้องนี้")
+    if db_ticket.status != "closed":
+        raise ValueError("ลบได้เฉพาะคำร้องที่ปิดเคสแล้ว")
     db.delete(db_ticket)
     db.commit()
     return True
+
+
+def change_booking_state(
+    db: Session, booking_id: int, user_id: int, next_status: str
+) -> Optional[ReservationBooking]:
+    db_booking = get_booking(db, booking_id)
+    if db_booking is None:
+        return None
+    if db_booking.user_id != user_id:
+        raise BookingStateError("คุณไม่มีสิทธิ์จัดการ booking นี้")
+
+    allowed = {
+        "in_progress": {"pending", "confirmed"},
+        "completed": {"in_progress"},
+        "cancelled": {"pending", "confirmed"},
+    }
+    if db_booking.status not in allowed[next_status]:
+        raise BookingStateError(
+            f"ไม่สามารถเปลี่ยนสถานะจาก {db_booking.status} เป็น {next_status} ได้"
+        )
+
+    setattr(db_booking, "status", next_status)
+    if next_status == "in_progress":
+        db_booking.checked_out_at = datetime.utcnow()
+    if next_status == "completed":
+        db_booking.checked_in_at = datetime.utcnow()
+    db.commit()
+    db.refresh(db_booking)
+    return db_booking

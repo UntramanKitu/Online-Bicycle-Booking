@@ -260,6 +260,13 @@ h1, h2, h3, .brand-text { font-family: 'Kanit', sans-serif; }
 .success-view p { margin: 0 0 22px; color: var(--text-muted); font-size: 14px; line-height: 1.6; }
 .qr-box { width: 140px; height: 140px; margin: 0 auto 22px; border: 1px solid var(--border); border-radius: 12px; background: repeating-linear-gradient(0deg, var(--text) 0 6px, transparent 6px 12px), repeating-linear-gradient(90deg, var(--text) 0 6px, transparent 6px 12px); background-blend-mode: multiply; background-color: #fff; opacity: .85; }
 .booking-code { margin-bottom: 20px; padding: 14px; border: 1px dashed var(--border); border-radius: 12px; font-family: 'Kanit', sans-serif; font-size: 20px; font-weight: 600; letter-spacing: 1px; }
+.my-bookings { margin-top: 42px; }
+.my-bookings .booking-heading { margin-bottom: 14px; }
+.my-bookings h2 { margin: 0 0 4px; font-size: 19px; }
+.my-booking { display: flex; align-items: center; gap: 16px; margin-bottom: 10px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.my-booking > div:first-child { display: grid; flex: 1; gap: 3px; }
+.my-booking > div:first-child span { color: var(--text-muted); font-size: 13px; }
+.booking-actions { display: flex; gap: 8px; }
 
 @media (max-width: 900px) { .bike-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 640px) { .reference-header .app-header-inner { padding: 0 16px; } .reference-user label { display: none; } .logout-button { font-size: 12px; } .reference-sidebar { position: fixed; top: 60px; bottom: 0; z-index: 4; box-shadow: 4px 0 16px rgba(0,0,0,.08); } .page { padding: 22px 16px 36px; } .bike-grid { gap: 12px; } .modal-card { padding: 20px; } }
