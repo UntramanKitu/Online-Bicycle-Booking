@@ -1,0 +1,265 @@
+﻿@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@500;600;700&family=Sarabun:wght@400;500;600&display=swap');
+
+/* =========================================================
+   BOT BikeA Theme (template)
+   ========================================================= */
+:root {
+  --color-dark-teal: #092328;
+  --color-deep-teal: #12544f;
+  --color-emerald: #2a835f;
+  --color-sage: #8bbb92;
+
+  --bg: #eef4f1;
+  --surface: #ffffff;
+  --surface-2: #f6faf8;
+  --border: #dbe7e1;
+  --text: #153239;
+  --text-muted: #5b7a7d;
+
+  --danger: #c0392b;
+  --warn: #b7791f;
+  --info: #2b6cb0;
+  --success: #2a835f;
+
+  --radius: 12px;
+  --shadow: 0 6px 24px rgba(9, 35, 40, 0.08);
+  --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.55; }
+#root { min-height: 100svh; }
+
+.app { display: flex; flex-direction: column; min-height: 100svh; }
+.page { flex: 1; width: 100%; max-width: 1200px; margin: 0 auto; padding: 24px 20px 48px; }
+
+.app-header { background: var(--color-deep-teal); color: #fff; }
+.app-header-inner {
+  max-width: 1200px; margin: 0 auto; padding: 0 20px;
+  display: flex; align-items: center; gap: 24px; height: 64px;
+}
+.brand { display: flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 700; letter-spacing: 0.5px; }
+.brand-icon { font-size: 26px; }
+.nav { display: flex; gap: 6px; flex: 1; }
+.nav-item {
+  display: inline-flex; align-items: center; gap: 8px;
+  color: rgba(255, 255, 255, 0.82); text-decoration: none;
+  padding: 8px 14px; border-radius: 8px; font-weight: 500; font-size: 15px;
+  transition: background 0.2s, color 0.2s;
+}
+.nav-item:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
+.nav-item.active { background: var(--color-emerald); color: #fff; }
+.user-picker { display: flex; align-items: center; gap: 8px; font-size: 13px; color: rgba(255, 255, 255, 0.85); }
+.user-picker input {
+  width: 64px; padding: 6px 8px; border-radius: 8px; border: none;
+  font-size: 14px; color: var(--color-dark-teal); font-weight: 600;
+}
+
+.page-section { display: flex; flex-direction: column; gap: 18px; }
+.section-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.section-title { margin: 0; font-size: 28px; color: var(--color-dark-teal); }
+.section-subtitle { margin: 4px 0 0; color: var(--text-muted); font-size: 14px; }
+
+.panel {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px;
+}
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 9px 16px; border-radius: 9px; border: 1px solid transparent;
+  font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.18s;
+  font-family: var(--font);
+}
+.btn-primary { background: var(--color-emerald); color: #fff; }
+.btn-primary:hover { background: var(--color-dark-teal); }
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-ghost { background: var(--surface-2); color: var(--text); border-color: var(--border); }
+.btn-ghost:hover { border-color: var(--color-sage); }
+.btn-danger-sm { background: transparent; color: var(--danger); border: 1px solid rgba(192, 57, 43, 0.35); padding: 4px 10px; font-size: 12.5px; border-radius: 7px; }
+.btn-danger-sm:hover { background: var(--danger); color: #fff; }
+.btn-sm { padding: 5px 10px; font-size: 12.5px; border-radius: 7px; }
+/* ---------- Alerts ---------- */
+.alert {
+  padding: 12px 16px; border-radius: 10px; font-size: 14px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.alert-error { background: #fdecea; color: var(--danger); border: 1px solid #f5c6c0; }
+.alert-success { background: #e7f4ec; color: var(--success); border: 1px solid #bfe3cd; }
+.alert-close { border: none; background: transparent; font-size: 20px; cursor: pointer; color: inherit; line-height: 1; }
+
+/* ---------- Forms ---------- */
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 13px; font-weight: 600; color: var(--text); }
+.field input, .field select, .field textarea {
+  padding: 9px 12px; border: 1px solid var(--border); border-radius: 9px;
+  font-family: var(--font); font-size: 14px; color: var(--text); background: var(--surface-2);
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  outline: 2px solid var(--color-sage); border-color: var(--color-emerald);
+}
+.field-wide { grid-column: 1 / -1; }
+.form-actions { grid-column: 1 / -1; display: flex; gap: 10px; justify-content: flex-end; padding-top: 4px; }
+
+/* ---------- Tabs ---------- */
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.tab {
+  padding: 7px 14px; border-radius: 999px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text-muted); font-size: 13.5px; font-weight: 600;
+  cursor: pointer; transition: all 0.18s;
+}
+.tab:hover { border-color: var(--color-sage); color: var(--color-dark-teal); }
+.tab.active { background: var(--color-deep-teal); color: #fff; border-color: var(--color-deep-teal); }
+
+/* ---------- Table ---------- */
+.table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.table th {
+  text-align: left; padding: 10px 12px; color: var(--text-muted);
+  font-size: 12px; letter-spacing: 0.4px; text-transform: uppercase;
+  border-bottom: 2px solid var(--border); background: var(--surface-2);
+}
+.table td { padding: 11px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.table tbody tr:hover { background: var(--surface-2); }
+.mini-select {
+  margin-left: 6px; padding: 3px 4px; font-size: 12px;
+  border: 1px solid var(--border); border-radius: 6px; background: var(--surface);
+}
+
+/* ---------- Badges ---------- */
+.badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.badge-success { background: #e7f4ec; color: var(--success); }
+.badge-warn { background: #fdf1dc; color: var(--warn); }
+.badge-danger { background: #fdecea; color: var(--danger); }
+.badge-info { background: #e3edf8; color: var(--info); }
+.badge-active { background: #e0f0ee; color: var(--color-deep-teal); }
+.badge-muted { background: #eef1f2; color: var(--text-muted); }
+.badge-sage { background: #e9f2eb; color: var(--color-emerald); }
+.badge-violet { background: #efe7f7; color: #7b4fc0; }
+
+/* ---------- Empty / Muted ---------- */
+.empty { text-align: center; color: var(--text-muted); padding: 32px 0; }
+.muted { color: var(--text-muted); }
+.small { font-size: 12.5px; }
+
+/* ---------- Group cards ---------- */
+.grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+.group-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 18px; display: flex; flex-direction: column; gap: 10px;
+}
+.group-card-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.group-card h3 { margin: 0; color: var(--color-dark-teal); font-size: 17px; }
+.group-meta { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--text-muted); }
+.group-meta strong { color: var(--text); }
+.member-count { font-weight: 700; color: var(--color-deep-teal); }
+.group-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.members-list { border-top: 1px dashed var(--border); padding-top: 10px; font-size: 13px; display: flex; flex-direction: column; gap: 5px; }
+.member-row { display: flex; justify-content: space-between; align-items: center; }
+.role-tag { font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 999px; }
+.role-leader { background: #e0f0ee; color: var(--color-deep-teal); }
+.role-member { background: var(--surface-2); color: var(--text-muted); }
+
+/* ---------- Ticket detail ---------- */
+.ticket-detail { display: flex; flex-direction: column; gap: 10px; padding: 4px 0; }
+.ticket-detail p { margin: 0; }
+.detail-row td { background: var(--surface-2); }
+
+/* ---------- Footer ---------- */
+.app-footer {
+  background: var(--color-dark-teal); color: rgba(255, 255, 255, 0.75);
+  text-align: center; padding: 16px; font-size: 13px;
+}
+
+@media (max-width: 720px) {
+  .app-header-inner { flex-wrap: wrap; height: auto; padding: 10px 16px; gap: 10px; }
+  .nav { order: 3; width: 100%; overflow-x: auto; }
+  .section-title { font-size: 22px; }
+  .table { display: block; overflow-x: auto; }
+}
+
+/* BikeShare booking reference */
+:root {
+  --color-dark-teal: #092328;
+  --color-deep-teal: #12544f;
+  --color-emerald: #2a835f;
+  --color-sage: #8bbb92;
+  --bg: #f5f9f6;
+  --surface: #fff;
+  --border: rgba(9, 35, 40, .1);
+  --text: #092328;
+  --text-muted: #5b7873;
+  --font: 'Sarabun', sans-serif;
+}
+
+body { background: var(--bg); font-family: var(--font); color: var(--text); }
+h1, h2, h3, .brand-text { font-family: 'Kanit', sans-serif; }
+.reference-shell { min-height: 100svh; }
+.reference-header { height: 60px; background: var(--color-dark-teal); }
+.reference-header .app-header-inner { max-width: none; height: 60px; padding: 0 24px; gap: 16px; }
+.menu-button { width: 34px; height: 34px; border: 0; border-radius: 8px; background: transparent; cursor: pointer; }
+.menu-button span, .menu-button span::before, .menu-button span::after { display: block; position: relative; width: 18px; height: 2px; margin: auto; background: #fff; content: ''; }
+.menu-button span::before { position: absolute; top: -6px; }
+.menu-button span::after { position: absolute; top: 6px; }
+.menu-button:hover { background: rgba(255,255,255,.08); }
+.brand { gap: 8px; font-family: 'Kanit', sans-serif; font-size: 17px; }
+.brand-mark { color: var(--color-sage); font-size: 29px; line-height: 0; transform: rotate(-35deg); }
+.reference-user { margin-left: auto; gap: 14px; }
+.reference-user label { order: 2; color: rgba(255,255,255,.9); font-size: 14px; }
+.reference-user input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.notification { order: 1; color: #fff; font-size: 21px; opacity: .9; }
+.logout-button { order: 3; border: 0; padding: 0; background: transparent; color: var(--color-sage); cursor: pointer; font: inherit; font-size: 14px; }
+.reference-layout { display: flex; min-height: calc(100svh - 60px); }
+.reference-sidebar { width: 230px; flex: none; padding: 22px 14px; border-right: 1px solid var(--border); background: var(--surface); transition: margin-left .2s ease; }
+.reference-sidebar.hidden { margin-left: -230px; }
+.welcome { padding: 0 10px 16px; color: var(--text-muted); font-size: 13px; line-height: 1.5; }
+.welcome strong { color: var(--text); font-weight: 600; }
+.sidebar-nav .nav-item { display: block; padding: 11px 12px; margin-bottom: 2px; border-radius: 9px; color: var(--text); text-decoration: none; font-size: 14.5px; }
+.sidebar-nav .nav-item:hover:not(.active) { background: var(--bg); }
+.sidebar-nav .nav-item.active { background: rgba(42,131,95,.12); color: var(--color-emerald); font-weight: 600; }
+.page { flex: 1; max-width: none; min-width: 0; margin: 0; padding: 32px 36px 52px; }
+.app-footer { display: none; }
+
+.booking-page { max-width: 1180px; margin: 0 auto; }
+.booking-heading { margin-bottom: 22px; }
+.booking-heading h1 { margin: 0 0 6px; font-size: 23px; }
+.booking-heading p { margin: 0; color: var(--text-muted); font-size: 14px; }
+.bike-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
+.bike-card { overflow: hidden; display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); transition: transform .15s ease, box-shadow .15s ease; }
+.bike-card:not(.disabled):hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(9,35,40,.08); }
+.bike-card.disabled { opacity: .55; }
+.bike-thumb { position: relative; height: 110px; display: grid; place-items: center; }
+.bike-tag { position: absolute; top: 8px; left: 8px; padding: 3px 8px; border-radius: 20px; background: rgba(255,255,255,.85); font-size: 11px; font-weight: 600; }
+.bike-illustration { stroke: var(--color-deep-teal); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.bike-body { display: flex; flex: 1; flex-direction: column; padding: 12px 14px 14px; }
+.bike-body h2 { margin: 0 0 3px; font-size: 15px; font-weight: 600; }
+.bike-body p { margin: 0 0 8px; color: var(--text-muted); font-size: 12.5px; }
+.bike-meta { display: flex; align-items: center; justify-content: space-between; min-height: 28px; margin-bottom: 10px; color: var(--text-muted); font-size: 12px; }
+.status-pill { padding: 3px 9px; border-radius: 20px; font-size: 11.5px; font-weight: 600; }
+.status-pill.free { background: rgba(139,187,146,.3); color: var(--color-deep-teal); }
+.status-pill.busy { background: rgba(9,35,40,.08); color: var(--text-muted); }
+.select-btn { width: 100%; margin-top: auto; padding: 9px 0; border: 0; border-radius: 9px; background: var(--color-emerald); color: #fff; cursor: pointer; font: inherit; font-size: 13.5px; }
+.select-btn:hover { background: #236e50; }
+.select-btn:disabled { background: rgba(9,35,40,.12); color: var(--text-muted); cursor: not-allowed; }
+.booking-modal { position: fixed; z-index: 5; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(9,35,40,.32); }
+.modal-card { position: relative; width: min(560px, 100%); max-height: calc(100svh - 40px); overflow: auto; padding: 24px; border-radius: 14px; background: var(--surface); box-shadow: 0 16px 40px rgba(9,35,40,.18); }
+.modal-close { position: absolute; top: 12px; right: 16px; border: 0; background: transparent; color: var(--text-muted); font-size: 25px; cursor: pointer; }
+.summary-row { display: flex; align-items: center; gap: 16px; margin-bottom: 22px; padding-right: 24px; }
+.summary-row > div { display: grid; gap: 3px; }
+.summary-row span { color: var(--text-muted); font-size: 13px; }
+.modal-card .field { margin-bottom: 18px; }
+.modal-card .field label { display: block; margin-bottom: 7px; font-size: 13.5px; font-weight: 500; }
+.modal-card select, .modal-card textarea { width: 100%; padding: 11px 12px; border: 1px solid var(--border); border-radius: 9px; background: #fff; color: var(--text); font: inherit; font-size: 14px; }
+.modal-card textarea { min-height: 70px; resize: vertical; }
+.modal-card small { display: block; margin-top: 6px; color: var(--text-muted); font-size: 12px; }
+.confirm-actions { display: flex; gap: 12px; margin-top: 26px; }
+.success-view { max-width: 420px; margin: 20px auto 0; text-align: center; }
+.success-icon { display: grid; width: 64px; height: 64px; place-items: center; margin: 0 auto 18px; border-radius: 50%; background: rgba(42,131,95,.12); color: var(--color-emerald); font-size: 32px; }
+.success-view h1 { margin: 0 0 8px; font-size: 21px; }
+.success-view p { margin: 0 0 22px; color: var(--text-muted); font-size: 14px; line-height: 1.6; }
+.qr-box { width: 140px; height: 140px; margin: 0 auto 22px; border: 1px solid var(--border); border-radius: 12px; background: repeating-linear-gradient(0deg, var(--text) 0 6px, transparent 6px 12px), repeating-linear-gradient(90deg, var(--text) 0 6px, transparent 6px 12px); background-blend-mode: multiply; background-color: #fff; opacity: .85; }
+.booking-code { margin-bottom: 20px; padding: 14px; border: 1px dashed var(--border); border-radius: 12px; font-family: 'Kanit', sans-serif; font-size: 20px; font-weight: 600; letter-spacing: 1px; }
+
+@media (max-width: 900px) { .bike-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .reference-header .app-header-inner { padding: 0 16px; } .reference-user label { display: none; } .logout-button { font-size: 12px; } .reference-sidebar { position: fixed; top: 60px; bottom: 0; z-index: 4; box-shadow: 4px 0 16px rgba(0,0,0,.08); } .page { padding: 22px 16px 36px; } .bike-grid { gap: 12px; } .modal-card { padding: 20px; } }

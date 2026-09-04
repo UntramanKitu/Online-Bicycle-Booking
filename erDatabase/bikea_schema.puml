@@ -1,0 +1,294 @@
+@startuml BikeA_Database_Schema_v2
+!theme plain
+skinparam shadowing false
+skinparam roundCorner 10
+skinparam nodesep 40
+skinparam ranksep 60
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam entity {
+    BackgroundColor #FFFFFF
+    BorderColor #333333
+    ArrowColor #666666
+}
+
+skinparam rectangle {
+    roundCorner 15
+}
+
+title Database Schema v2 - BikeA (ระบบจองยืมจักรยานออนไลน์)\n(Shared Database: Django + FastAPI)
+
+' =========================================
+' 1. นายปิยะพงษ์ — Core Entities
+' =========================================
+rectangle "1️⃣ Core Entities (ปิยะพงษ์)" as p1 #E3F2FD {
+    entity unified_user {
+        * **id** : int <<PK>>
+        --
+        username : string
+        email : string
+        first_name / last_name : string
+        student_id / faculty : string
+        role : user_role <<ENUM>>
+        status : user_status <<ENUM>>
+        created_at / updated_at : datetime
+    }
+
+    entity bicycle {
+        * **id** : int <<PK>>
+        --
+        bike_code : string
+        brand / model / color : string
+        frame_number : string
+        status : bicycle_status <<ENUM>>
+        current_location : string
+        total_rides : int
+        purchase_date / price : date/decimal
+    }
+
+    entity maintenance {
+        * **id** : int <<PK>>
+        --
+        bicycle_id : int <<FK>>
+        reported_by : int <<FK>>
+        assigned_to : int <<FK>>
+        type : maintenance_type <<ENUM>>
+        status : maintenance_status <<ENUM>>
+        cost : decimal
+        start_date / end_date : date
+    }
+}
+
+' =========================================
+' 2. นายวีรพันธ์ — Staff & System Management
+' =========================================
+rectangle "2️⃣ Staff & System (วีรพันธ์)" as p2 #FFF3E0 {
+    entity staff_officer {
+        * **id** : int <<PK>>
+        --
+        user_id : int <<FK UNIQUE>>
+        employee_id : string
+        position : string
+        access_level : string
+        status : user_status <<ENUM>>
+    }
+
+    entity campus_announcement {
+        * **id** : int <<PK>>
+        --
+        created_by : int <<FK>>
+        title : string
+        content : string
+        priority : announcement_priority <<ENUM>>
+        status : announcement_status <<ENUM>>
+        view_count : int
+    }
+
+    entity system_audit_log {
+        * **id** : int <<PK>>
+        --
+        user_id : int <<FK>>
+        action_type : string
+        entity_type : string
+        entity_id : int
+        old_values / new_values : string
+        ip_address : string
+    }
+}
+
+' =========================================
+' 3. นายเอกพล — Favorites, Damage & Returns
+' =========================================
+rectangle "3️⃣ Favorites & Returns (เอกพล)" as p3 #E8F5E9 {
+    entity favorite {
+        * **id** : int <<PK>>
+        --
+        user_id : int <<FK>>
+        target_type : favorite_target_type <<ENUM>>
+        bicycle_id : int <<FK, nullable>>
+        station_name : string <<nullable>>
+        nickname : string
+        CHECK: มีค่าแค่ฝั่งเดียวตาม target_type
+    }
+
+    entity damage_evidence {
+        * **id** : int <<PK>>
+        --
+        return_record_id : int <<FK>>
+        bicycle_id : int <<FK>>
+        image_url : string
+        severity : damage_severity <<ENUM>>
+        estimated_cost : decimal
+        reported_at : datetime
+    }
+
+    entity return_record {
+        * **id** : int <<PK>>
+        --
+        booking_id : int <<FK>>
+        bicycle_id : int <<FK>>
+        user_id : int <<FK>>
+        return_location : string
+        status : return_status <<ENUM>>
+        borrowed_at / returned_at : datetime
+        odometer_reading : int
+    }
+}
+
+' =========================================
+' 4. นางสาวณธิดา — Comparison, Notification & Feedback
+' =========================================
+rectangle "4️⃣ Comparison & Feedback (ณธิดา)" as p4 #F3E5F5 {
+    entity bicycle_comparison {
+        * **id** : int <<PK>>
+        --
+        user_id : int <<FK>>
+        bicycle_id : int <<FK>>
+        comparison_session_id : int
+        added_at / removed_at : datetime
+    }
+
+    entity notification {
+        * **id** : int <<PK>>
+        --
+        user_id : int <<FK>>
+        title : string
+        message : string
+        type : notification_type <<ENUM>>
+        channel : notification_channel <<ENUM>>
+        status : notification_status <<ENUM>>
+        reference_id / type : int/string
+    }
+
+    entity feedback_rating {
+        * **id** : int <<PK>>
+        --
+        user_id : int <<FK>>
+        bicycle_id : int <<FK>>
+        booking_id : int <<FK>>
+        rating : int
+        comment : string
+        status : feedback_status <<ENUM>>
+    }
+}
+
+' =========================================
+' 5. นายชัยอนันต์ — Booking, History & Support
+' =========================================
+rectangle "5️⃣ Booking & Support (ชัยอนันต์)" as p5 #FFEBEE {
+    entity reservation_booking {
+        * **id** : int <<PK>>
+        --
+        user_id : int <<FK>>
+        bicycle_id : int <<FK>>
+        booking_type : booking_type <<ENUM>>
+        status : booking_status <<ENUM>>
+        pickup_location : string
+        return_location : string
+        start_time / end_time : datetime
+        checked_out_at / in_at : datetime
+    }
+
+    entity usage_history_log {
+        * **id** : int <<PK>>
+        --
+        user_id : int <<FK>>
+        bicycle_id : int <<FK>>
+        booking_id : int <<FK>>
+        duration_minutes : int
+        distance_km : decimal
+        starting_station : string
+        ending_station : string
+    }
+
+    entity support_ticket {
+        * **id** : int <<PK>>
+        --
+        user_id : int <<FK>>
+        assigned_to : int <<FK>>
+        subject : string
+        description : string
+        category : ticket_category <<ENUM>>
+        priority : ticket_priority <<ENUM>>
+        status : ticket_status <<ENUM>>
+        resolution_notes : string
+    }
+
+    entity group_ride {
+        * **id** : int <<PK>>
+        --
+        created_by : int <<FK>>
+        name : string
+        destination : string
+        meetup_location : string
+        meetup_time : datetime
+        max_members : int
+        current_members : int
+        status : group_ride_status <<ENUM>>
+    }
+
+    entity group_ride_member {
+        * **id** : int <<PK>>
+        --
+        group_ride_id : int <<FK>>
+        user_id : int <<FK>>
+        role : group_ride_member_role <<ENUM>>
+        joined_at / left_at : datetime
+        UNIQUE (group_ride_id, user_id)
+    }
+}
+
+' =========================================
+' ความสัมพันธ์ (Relationships)
+' =========================================
+unified_user ||--o| staff_officer : "is"
+unified_user ||--o{ favorite : "saves"
+unified_user ||--o{ return_record : "returns bike"
+unified_user ||--o{ bicycle_comparison : "compares"
+unified_user ||--o{ notification : "receives"
+unified_user ||--o{ feedback_rating : "writes"
+unified_user ||--o{ reservation_booking : "makes"
+unified_user ||--o{ usage_history_log : "has"
+unified_user ||--o{ support_ticket : "creates"
+unified_user ||--o{ campus_announcement : "creates"
+unified_user ||--o{ system_audit_log : "triggers"
+unified_user ||--o{ maintenance : "reports"
+
+bicycle ||--o{ maintenance : "undergoes"
+bicycle ||--o{ bicycle_comparison : "compared in"
+bicycle ||--o{ feedback_rating : "rated in"
+bicycle ||--o{ return_record : "returned as"
+bicycle ||--o{ damage_evidence : "has damage"
+bicycle ||--o{ reservation_booking : "reserved for"
+bicycle ||--o{ usage_history_log : "tracked in"
+bicycle ||--o{ favorite : "favorited as"
+
+staff_officer ||--o{ maintenance : "assigned to fix"
+staff_officer ||--o{ support_ticket : "handles"
+
+reservation_booking ||--o| return_record : "results in"
+return_record ||--o{ damage_evidence : "may have"
+reservation_booking ||--o{ feedback_rating : "reviewed in"
+reservation_booking ||--o| usage_history_log : "logged as"
+
+group_ride ||--o{ group_ride_member : "has"
+unified_user ||--o{ group_ride : "leads"
+unified_user ||--o{ group_ride_member : "joins"
+
+' =========================================
+' Notes
+' =========================================
+note bottom of p1
+  **Shared Database Pattern**
+  Django + FastAPI ใช้ Postgres instance เดียวกัน
+  FK ข้าม service ใช้งานได้ปกติ
+end note
+
+note bottom of p3
+  **favorite table** แทน penalty_strike เดิม
+  target_type: 'bicycle' | 'station'
+  CHECK constraint: มีค่าแค่ฝั่งเดียว
+end note
+
+@enduml
