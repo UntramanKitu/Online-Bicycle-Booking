@@ -220,6 +220,16 @@ h1, h2, h3, .brand-text { font-family: 'Kanit', sans-serif; }
 .sidebar-nav .nav-item.active { background: rgba(42,131,95,.12); color: var(--color-emerald); font-weight: 600; }
 .page { flex: 1; max-width: none; min-width: 0; margin: 0; padding: 32px 36px 52px; }
 .app-footer { display: none; }
+.login-page { min-height: 100svh; display: grid; place-items: center; padding: 24px; background: radial-gradient(circle at 15% 15%, rgba(139,187,146,.28), transparent 32%), var(--bg); }
+.login-panel { width: min(420px, 100%); padding: 42px 36px; border: 1px solid var(--border); border-radius: 18px; background: var(--surface); box-shadow: 0 18px 45px rgba(9,35,40,.12); text-align: center; }
+.login-mark { display: grid; width: 58px; height: 58px; place-items: center; margin: 0 auto 18px; border-radius: 16px; background: var(--color-dark-teal); color: var(--color-sage); font-family: 'Kanit', sans-serif; font-size: 38px; transform: rotate(-10deg); }
+.login-eyebrow { margin: 0 0 8px; color: var(--color-emerald); font-size: 11px; font-weight: 700; letter-spacing: 1.6px; }
+.login-panel h1 { margin: 0 0 8px; font-size: 29px; }
+.login-copy { margin: 0 auto 28px; color: var(--text-muted); font-size: 14px; line-height: 1.7; }
+.google-login-button { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; padding: 13px 18px; border: 1px solid #d9dedb; border-radius: 10px; background: #fff; color: var(--text); text-decoration: none; font: inherit; font-size: 14px; font-weight: 600; transition: box-shadow .18s, border-color .18s; }
+.google-login-button:hover { border-color: var(--color-sage); box-shadow: 0 5px 14px rgba(9,35,40,.1); }
+.google-logo { font-family: Arial, sans-serif; font-size: 20px; font-weight: 700; color: #4285f4; }
+.login-note { margin: 18px 0 0; color: var(--text-muted); font-size: 12px; }
 
 .booking-page { max-width: 1180px; margin: 0 auto; }
 .booking-heading { margin-bottom: 22px; }
@@ -244,7 +254,6 @@ h1, h2, h3, .brand-text { font-family: 'Kanit', sans-serif; }
 .select-btn:disabled { background: rgba(9,35,40,.12); color: var(--text-muted); cursor: not-allowed; }
 .booking-modal { position: fixed; z-index: 5; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(9,35,40,.32); }
 .modal-card { position: relative; width: min(560px, 100%); max-height: calc(100svh - 40px); overflow: auto; padding: 24px; border-radius: 14px; background: var(--surface); box-shadow: 0 16px 40px rgba(9,35,40,.18); }
-.modal-close { position: absolute; top: 12px; right: 16px; border: 0; background: transparent; color: var(--text-muted); font-size: 25px; cursor: pointer; }
 .summary-row { display: flex; align-items: center; gap: 16px; margin-bottom: 22px; padding-right: 24px; }
 .summary-row > div { display: grid; gap: 3px; }
 .summary-row span { color: var(--text-muted); font-size: 13px; }
@@ -270,3 +279,19 @@ h1, h2, h3, .brand-text { font-family: 'Kanit', sans-serif; }
 
 @media (max-width: 900px) { .bike-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 640px) { .reference-header .app-header-inner { padding: 0 16px; } .reference-user label { display: none; } .logout-button { font-size: 12px; } .reference-sidebar { position: fixed; top: 60px; bottom: 0; z-index: 4; box-shadow: 4px 0 16px rgba(0,0,0,.08); } .page { padding: 22px 16px 36px; } .bike-grid { gap: 12px; } .modal-card { padding: 20px; } }
+/* User picker select (real users) */
+.reference-user select {
+  order: 3;
+  padding: 5px 10px;
+  max-width: 170px;
+  border: 1px solid rgba(255,255,255,.35);
+  border-radius: 9px;
+  background: rgba(9,35,40,.18);
+  color: #fff;
+  font-size: 13px;
+  font-family: var(--font);
+  cursor: pointer;
+}
+.reference-user select:focus-visible { outline: 2px solid var(--color-sage); }
+.reference-user select option { color: var(--text-dark); background: #fff; }
+.reference-user .logout-button { order: 4; }

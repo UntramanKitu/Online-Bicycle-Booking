@@ -4,7 +4,10 @@ const API_BASE = import.meta.env.VITE_API_URL || ''
 
 export const api = axios.create({
   baseURL: `${API_BASE}/api`,
+  withCredentials: true,
 })
+
+export const authLoginUrl = `${API_BASE}/api/auth/google/login`
 
 export function getApiError(err) {
   const detail = err?.response?.data?.detail
