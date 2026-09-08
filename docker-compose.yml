@@ -6,7 +6,7 @@ services:
     container_name: bike_returns_db
     restart: unless-stopped
     ports:
-      - "5433:5432"
+      - "5434:5432"
     environment:
       POSTGRES_DB: bike_returns
       POSTGRES_USER: postgres

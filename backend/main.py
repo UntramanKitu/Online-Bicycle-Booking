@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 import os
 
 from database import engine, Base
-from routers import favorites, penalties, lost_items, points_log
+from routers import favorites, penalties, lost_items, users
 
 
 def _init_db():
@@ -40,7 +40,7 @@ app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 app.include_router(favorites.router)
 app.include_router(penalties.router)
 app.include_router(lost_items.router)
-app.include_router(points_log.router)
+app.include_router(users.router)
 
 
 @app.get("/")

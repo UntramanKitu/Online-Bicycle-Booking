@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Optional, List, Union
 
@@ -64,7 +64,7 @@ class FavoriteResponse(FavoriteBase):
 class PenaltyStrikeBase(BaseModel):
     user_id: Union[int, str]
     reason: str
-    penalty_points: int = 1
+    penalty_points: int = Field(default=1, gt=0, le=1, description="ขนาดการเปลี่ยนคะแนนต่อ 1 รายการ ตรึงไว้ที่ 1 เสมอ — ทิศทาง (+1/-1) คำนวณจาก reason โดยอัตโนมัติที่ backend")
     action: str = "warning"
     suspension_days: Optional[int] = None
     description: Optional[str] = None
@@ -77,7 +77,7 @@ class PenaltyStrikeCreate(PenaltyStrikeBase):
 
 class PenaltyStrikeUpdate(BaseModel):
     reason: Optional[str] = None
-    penalty_points: Optional[int] = None
+    penalty_points: Optional[int] = Field(default=None, gt=0, le=1)
     action: Optional[str] = None
     suspension_days: Optional[int] = None
     description: Optional[str] = None
@@ -92,28 +92,10 @@ class PenaltyStrikeResponse(PenaltyStrikeBase):
     model_config = {"from_attributes": True}
 
 
-# ===== ประวัติแต้ม (PointsLog) =====
-class PointsLogBase(BaseModel):
-    user_id: Union[int, str]
-    points: int
-    reason: str
-    description: Optional[str] = None
-    penalty_id: Optional[int] = None
-
-class PointsLogCreate(PointsLogBase):
-    pass
-
-class PointsLogResponse(PointsLogBase):
-    id: int
-    user_id: int
-    created_at: datetime
-    model_config = {"from_attributes": True}
-
-
 # ===== 3. ของหาย (LostItem) =====
 class LostItemBase(BaseModel):
     user_id: Union[int, str]
-    bicycle_id: Union[int, str]
+    bicycle_id: Optional[Union[int, str]] = None
     item_name: str
     location: Optional[str] = None
     image_url: Optional[str] = None
@@ -136,7 +118,7 @@ class LostItemUpdate(BaseModel):
 class LostItemResponse(LostItemBase):
     id: int
     user_id: int
-    bicycle_id: int
+    bicycle_id: Optional[int] = None
     created_at: datetime
     updated_at: datetime
     model_config = {"from_attributes": True}

@@ -5,7 +5,7 @@ from typing import List
 from database import get_db
 from models import LostItem
 from schemas import LostItemCreate, LostItemUpdate, LostItemResponse
-from utils import resolve_user, resolve_bicycle
+from utils import resolve_user, resolve_bicycle, get_actor, require_owner_or_admin, Actor
 
 router = APIRouter(prefix="/api/lost-items", tags=["Lost Items"])
 
@@ -24,10 +24,15 @@ def get_lost_item(item_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/", response_model=LostItemResponse, status_code=201)
-def create_lost_item(data: LostItemCreate, db: Session = Depends(get_db)):
+def create_lost_item(data: LostItemCreate, db: Session = Depends(get_db), actor: Actor = Depends(get_actor)):
     user = resolve_user(data.user_id, db)
-    bike = resolve_bicycle(data.bicycle_id, db)
-    payload = {**data.model_dump(), "user_id": user.id, "bicycle_id": bike.id}
+    role, actor_id = actor
+    if role != "admin" and actor_id != user.id:
+        raise HTTPException(status_code=403, detail="ผู้ใช้ทั่วไปแจ้งของหายได้เฉพาะในนามของตัวเองเท่านั้น")
+    payload = {**data.model_dump(), "user_id": user.id}
+    if data.bicycle_id is not None:
+        bike = resolve_bicycle(data.bicycle_id, db)
+        payload["bicycle_id"] = bike.id
     record = LostItem(**payload)
     db.add(record)
     db.commit()
@@ -36,10 +41,11 @@ def create_lost_item(data: LostItemCreate, db: Session = Depends(get_db)):
 
 
 @router.put("/{item_id}", response_model=LostItemResponse)
-def update_lost_item(item_id: int, data: LostItemUpdate, db: Session = Depends(get_db)):
+def update_lost_item(item_id: int, data: LostItemUpdate, db: Session = Depends(get_db), actor: Actor = Depends(get_actor)):
     record = db.query(LostItem).filter(LostItem.id == item_id).first()
     if not record:
         raise HTTPException(status_code=404, detail="Lost item not found")
+    require_owner_or_admin(record.user_id, actor)
     for key, value in data.model_dump(exclude_unset=True).items():
         setattr(record, key, value)
     db.commit()
@@ -48,9 +54,10 @@ def update_lost_item(item_id: int, data: LostItemUpdate, db: Session = Depends(g
 
 
 @router.delete("/{item_id}", status_code=204)
-def delete_lost_item(item_id: int, db: Session = Depends(get_db)):
+def delete_lost_item(item_id: int, db: Session = Depends(get_db), actor: Actor = Depends(get_actor)):
     record = db.query(LostItem).filter(LostItem.id == item_id).first()
     if not record:
         raise HTTPException(status_code=404, detail="Lost item not found")
+    require_owner_or_admin(record.user_id, actor)
     db.delete(record)
     db.commit()

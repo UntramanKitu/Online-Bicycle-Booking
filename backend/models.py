@@ -13,21 +13,14 @@ class FavoriteTargetType(str, enum.Enum):
 
 
 class PenaltyReason(str, enum.Enum):
+    # เงื่อนไขหักคะแนน (-1)
     LATE_RETURN = "late_return"
     DAMAGED = "damaged"
     LOST = "lost"
     OTHER = "other"
-
-
-class PointsReason(str, enum.Enum):
-    LATE_RETURN = "late_return"
-    DAMAGED = "damaged"
-    LOST = "lost"
-    GOOD_RETURN = "good_return"
-    COMMUNITY_SERVICE = "community_service"
-    REPORT = "report"
-    WEEKLY_BONUS = "weekly_bonus"
-    OTHER = "other"
+    # เงื่อนไขเพิ่มคะแนน (+1)
+    GOOD_BEHAVIOR = "good_behavior"          # เจ้าหน้าที่บันทึกเองเมื่อเห็นพฤติกรรมดี
+    NO_VIOLATION_WEEK = "no_violation_week"  # ระบบสร้างอัตโนมัติเมื่อไม่ทำผิดครบ 7 วัน
 
 
 # ==================== Shared stub tables (FK reference เท่านั้น) ====================
@@ -95,22 +88,6 @@ class PenaltyStrike(Base):
     user = relationship("UnifiedUser", backref="penalties")
 
 
-# ==================== ประวัติแต้ม ====================
-
-class PointsLog(Base):
-    __tablename__ = "points_log"
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("unified_user.id", ondelete="CASCADE"), nullable=False)
-    points = Column(Integer, nullable=False)
-    reason = Column(SAEnum(PointsReason), nullable=False)
-    description = Column(Text, nullable=True)
-    penalty_id = Column(Integer, ForeignKey("penalty_strike.id", ondelete="SET NULL"), nullable=True)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-
-    user = relationship("UnifiedUser", backref="points_logs")
-
-
 # ==================== 3. ของหาย ====================
 
 class LostItem(Base):
@@ -118,7 +95,7 @@ class LostItem(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("unified_user.id", ondelete="CASCADE"), nullable=False)
-    bicycle_id = Column(Integer, ForeignKey("bicycle.id", ondelete="CASCADE"), nullable=False)
+    bicycle_id = Column(Integer, ForeignKey("bicycle.id", ondelete="SET NULL"), nullable=True)
     item_name = Column(String(100), nullable=False)
     location = Column(String(200), nullable=True)
     image_url = Column(String(500), nullable=True)

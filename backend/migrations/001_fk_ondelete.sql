@@ -8,7 +8,7 @@
 --        SELECT conname, conrelid::regclass AS table_name
 --        FROM pg_constraint
 --        WHERE contype = 'f'
---          AND conrelid::regclass::text IN ('favorite', 'penalty_strike', 'points_log', 'lost_item');
+--          AND conrelid::regclass::text IN ('favorite', 'penalty_strike', 'lost_item');
 --   2. If the names differ from the *_fkey guesses below (default Postgres
 --      naming for FKs created via SQLAlchemy create_all), swap them in.
 --   3. Run this file: psql "$DATABASE_URL" -f backend/migrations/001_fk_ondelete.sql
@@ -35,17 +35,10 @@ ALTER TABLE penalty_strike
     ADD CONSTRAINT penalty_strike_user_id_fkey
     FOREIGN KEY (user_id) REFERENCES unified_user(id) ON DELETE CASCADE;
 
--- points_log.user_id -> unified_user.id : CASCADE
-ALTER TABLE points_log DROP CONSTRAINT IF EXISTS points_log_user_id_fkey;
-ALTER TABLE points_log
-    ADD CONSTRAINT points_log_user_id_fkey
-    FOREIGN KEY (user_id) REFERENCES unified_user(id) ON DELETE CASCADE;
-
--- points_log.penalty_id -> penalty_strike.id : SET NULL
-ALTER TABLE points_log DROP CONSTRAINT IF EXISTS points_log_penalty_id_fkey;
-ALTER TABLE points_log
-    ADD CONSTRAINT points_log_penalty_id_fkey
-    FOREIGN KEY (penalty_id) REFERENCES penalty_strike(id) ON DELETE SET NULL;
+-- points_log table is no longer part of the model (scope trimmed back to 3
+-- tables: favorite, penalty_strike, lost_item). Drop it if it was already
+-- created on the shared Supabase instance by an earlier run of create_all().
+DROP TABLE IF EXISTS points_log;
 
 -- lost_item.user_id -> unified_user.id : CASCADE
 ALTER TABLE lost_item DROP CONSTRAINT IF EXISTS lost_item_user_id_fkey;
