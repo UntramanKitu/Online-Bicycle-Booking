@@ -12,7 +12,7 @@ const emptyForm = () => ({
 })
 
 export default function TicketsPage() {
-  const { userId } = useCurrentUser()
+  const { userId, getUserName } = useCurrentUser()
   const [tickets, setTickets] = useState([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -208,7 +208,7 @@ export default function TicketsPage() {
                   isActive && (
                     <tr className="detail-row" key={`${t.id}-detail`}>
                       <td colSpan={7}>
-                        <TicketDetail ticket={t} />
+                        <TicketDetail ticket={t} getUserName={getUserName} />
                       </td>
                     </tr>
                   ),
@@ -222,12 +222,12 @@ export default function TicketsPage() {
   )
 }
 
-function TicketDetail({ ticket }) {
+function TicketDetail({ ticket, getUserName }) {
   return (
     <div className="ticket-detail">
       <p><strong>รายละเอียด:</strong> {ticket.description}</p>
       {ticket.assigned_to != null && (
-        <p><strong>เจ้าหน้าที่ที่รับผิดชอบ:</strong> #{ticket.assigned_to}</p>
+        <p><strong>เจ้าหน้าที่ที่รับผิดชอบ:</strong> {getUserName(ticket.assigned_to)}</p>
       )}
       {ticket.resolved_at && (
         <p><strong>แก้ไขเสร็จเมื่อ:</strong> {formatDateTime(ticket.resolved_at)}</p>

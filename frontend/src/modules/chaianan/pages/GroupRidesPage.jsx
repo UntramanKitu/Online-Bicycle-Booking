@@ -20,7 +20,7 @@ const tabs = [
 ]
 
 export default function GroupRidesPage() {
-  const { userId } = useCurrentUser()
+  const { userId, getUserName } = useCurrentUser()
   const [groups, setGroups] = useState([])
   const [joined, setJoined] = useState(new Set())
   const [totalCount, setTotalCount] = useState(0)
@@ -180,8 +180,8 @@ export default function GroupRidesPage() {
       {showForm && (
         <form className="panel form-grid" onSubmit={handleCreate}>
           <div className="field">
-            <label>หัวหน้ากลุ่ม (user_id)</label>
-            <input type="number" value={userId} disabled />
+            <label>หัวหน้ากลุ่ม</label>
+            <input type="text" value={getUserName(userId)} disabled />
           </div>
           <div className="field">
             <label>ชื่อกลุ่ม *</label>
@@ -288,7 +288,7 @@ export default function GroupRidesPage() {
                   <span className={`badge ${meta.cls}`}>{meta.label}</span>
                 </div>
                 <div className="group-meta group-meta-block">
-                  <span><em>หัวหน้ากลุ่ม</em> <strong>#{g.created_by}</strong></span>
+                  <span><em>หัวหน้ากลุ่ม</em> <strong>{getUserName(g.created_by)}</strong></span>
                   <span><em>จุดหมาย</em> <strong>{g.destination}</strong></span>
                   <span><em>เวลานัด</em> <strong>{formatDateTime(g.meetup_time)}</strong></span>
                   <span><em>สถานที่นัดพบ</em> <strong>{g.meetup_location || '-'}</strong></span>
@@ -347,7 +347,7 @@ export default function GroupRidesPage() {
                   <div className="members-list">
                     {(membership[g.id] || []).map((m) => (
                       <div className="member-row" key={m.id}>
-                        <span>สมาชิก #{m.user_id}</span>
+                        <span>{getUserName(m.user_id)}</span>
                         <span className={`role-tag ${m.role === 'leader' ? 'role-leader' : 'role-member'}`}>
                           {m.role === 'leader' ? 'หัวหน้ากลุ่ม' : 'สมาชิก'}
                         </span>

@@ -10,11 +10,11 @@ const navItems = [
 ]
 
 export default function Layout() {
-  const { userId, setUserId, users, currentUser } = useCurrentUser()
+  const { userId, setUserId, users, currentUser, getUserName } = useCurrentUser()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
-  const displayName = currentUser ? currentUser.full_name : `ผู้ใช้ #${userId}`
+  const displayName = currentUser ? currentUser.full_name : getUserName(userId)
 
   return (
     <div className="app reference-shell">
