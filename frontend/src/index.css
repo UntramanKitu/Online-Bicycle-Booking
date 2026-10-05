@@ -112,6 +112,16 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); line
 }
 .tab:hover { border-color: var(--color-sage); color: var(--color-dark-teal); }
 .tab.active { background: var(--color-deep-teal); color: #fff; border-color: var(--color-deep-teal); }
+/* แท็บกลุ่มปั่น: ให้แต่ละสถานะมีสีของตัวเอง เห็นชัดว่ากำลังดูอะไรอยู่ */
+.tab-tone-open { color: var(--success); border-color: rgba(42, 131, 95, .35); }
+.tab-tone-open:hover { border-color: var(--success); }
+.tab-tone-open.active { background: var(--success); border-color: var(--success); color: #fff; }
+.tab-tone-full { color: var(--warn); border-color: rgba(183, 121, 31, .35); }
+.tab-tone-full:hover { border-color: var(--warn); }
+.tab-tone-full.active { background: var(--warn); border-color: var(--warn); color: #fff; }
+.tab-tone-cancelled { color: var(--danger); border-color: rgba(192, 57, 43, .3); }
+.tab-tone-cancelled:hover { border-color: var(--danger); }
+.tab-tone-cancelled.active { background: var(--danger); border-color: var(--danger); color: #fff; }
 
 /* ---------- Table ---------- */
 .table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
@@ -174,6 +184,30 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); line
 }
 .tabs-with-action { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .tabs-list { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ---------- Ticket cards (แทน table เพื่อให้ผู้ใช้อ่านง่ายบนมือถือ) ---------- */
+.ticket-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.ticket-card {
+  position: relative; display: flex; flex-direction: column; gap: 11px;
+  padding: 18px 18px 16px 22px; border: 1px solid var(--border);
+  border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow);
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.ticket-card:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(9, 35, 40, .12); }
+.ticket-card::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px;
+  border-radius: var(--radius) 0 0 var(--radius); background: var(--color-deep-teal);
+}
+.ticket-card.status-open::before { background: var(--danger); }
+.ticket-card.status-in_progress::before { background: var(--info); }
+.ticket-card.status-resolved::before { background: var(--success); }
+.ticket-card.status-closed::before { background: var(--text-muted); }
+.ticket-card.status-reopened::before { background: var(--warn); }
+.ticket-card.status-closed, .ticket-card.status-resolved { opacity: .8; }
+.ticket-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.ticket-card-head h3 { margin: 0; font-size: 16.5px; color: var(--color-dark-teal); }
+.ticket-card-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
+.ticket-card-actions { display: flex; gap: 8px; margin-top: auto; padding-top: 4px; }
 .group-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
 .group-card h3 { margin: 0; color: var(--color-dark-teal); font-size: 18px; }
 .group-meta { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--text-muted); }

@@ -13,10 +13,10 @@ const emptyForm = () => ({
 })
 
 const tabs = [
-  { value: '', label: 'ทั้งหมด' },
-  { value: 'open', label: 'เปิดรับสมาชิก' },
-  { value: 'full', label: 'เต็ม' },
-  { value: 'cancelled', label: 'ยกเลิก' },
+  { value: '', label: 'ทั้งหมด', tone: 'all' },
+  { value: 'open', label: 'เปิดรับสมาชิก', tone: 'open' },
+  { value: 'full', label: 'เต็ม', tone: 'full' },
+  { value: 'cancelled', label: 'ยกเลิก', tone: 'cancelled' },
 ]
 
 export default function GroupRidesPage() {
@@ -245,7 +245,7 @@ export default function GroupRidesPage() {
           {tabs.map((t) => (
             <button
               key={t.value}
-              className={status === t.value ? 'tab active' : 'tab'}
+              className={`tab tab-tone-${t.tone} ${status === t.value ? 'active' : ''}`}
               onClick={() => setStatus(t.value)}
             >
               {t.label}

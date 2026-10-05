@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api, getApiError } from '../../../api'
 import { formatDateTime, toIso } from '../../../utils'
+import { BOOKING_STATUSES } from '../../../constants'
 import { useCurrentUser } from '../../../context/currentUser'
 
 function BikeIcon() {
@@ -45,10 +46,10 @@ export default function BookingsPage() {
     return () => window.clearTimeout(timer)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // แปลง bicycle_id เป็นชื่อรุ่นจักรยาน สำหรับรายการใน "การจองของฉัน"
+  // แปลง bicycle_id เป็นชื่อจักรยาน สำหรับรายการใน "การจองของฉัน"
   const getBikeName = (id) => {
     const found = bikes.find((b) => b.id === Number(id))
-    return found ? `${found.model} · ${found.station}` : `จักรยาน #${id}`
+    return found ? found.model : `จักรยาน #${id}`
   }
 
   async function updateBookingState(id, action) {
@@ -157,7 +158,9 @@ export default function BookingsPage() {
         </div>
         {myBookings.length === 0 ? <p className="empty">ยังไม่มีการจอง</p> : myBookings.map((booking) => <article className="my-booking" key={booking.id}>
           <div><strong>{getBikeName(booking.bicycle_id)}</strong><span>{formatDateTime(booking.start_time)} - {formatDateTime(booking.end_time)}</span>{booking.note && <span className="booking-note">หมายเหตุ: {booking.note}</span>}</div>
-          <span className={`status-pill ${booking.status === 'completed' ? 'free' : 'busy'}`}>{booking.status}</span>
+          <span className={`status-pill ${booking.status === 'completed' ? 'free' : 'busy'}`}>
+            {(BOOKING_STATUSES[booking.status] || {}).label || booking.status}
+          </span>
           <div className="booking-actions">
             {['pending', 'confirmed'].includes(booking.status) && <><button className="btn btn-primary btn-sm" onClick={() => updateBookingState(booking.id, 'borrow')}>รับรถ</button><button className="btn btn-ghost btn-sm" onClick={() => updateBookingState(booking.id, 'cancel')}>ยกเลิก</button></>}
             {booking.status === 'in_progress' && <button className="btn btn-primary btn-sm" onClick={() => updateBookingState(booking.id, 'return')}>คืนรถ</button>}

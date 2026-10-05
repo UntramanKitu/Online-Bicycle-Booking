@@ -160,64 +160,46 @@ export default function TicketsPage() {
         ))}
       </div>
 
-      <div className="panel">
-        {loading ? (
-          <p className="empty">กำลังโหลดข้อมูล...</p>
-        ) : tickets.length === 0 ? (
-          <p className="empty">ยังไม่มีคำร้องแจ้งปัญหา</p>
-        ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>หัวข้อ</th>
-                <th>หมวดหมู่</th>
-                <th>เร่งด่วน</th>
-                <th>สถานะ</th>
-                <th>แจ้งเมื่อ</th>
-                <th>จัดการ</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tickets.map((t) => {
-                const catMeta = TICKET_CATEGORIES[t.category] || { label: t.category, cls: 'badge-muted' }
-                const priMeta = TICKET_PRIORITIES[t.priority] || { label: t.priority, cls: 'badge-muted' }
-                const statMeta = TICKET_STATUSES[t.status] || { label: t.status, cls: 'badge-muted' }
-                const isActive = activeId === t.id
-                return [
-                  <tr key={t.id}>
-                    <td>{t.id}</td>
-                    <td>{t.subject}</td>
-                    <td><span className={`badge ${catMeta.cls}`}>{catMeta.label}</span></td>
-                    <td><span className={`badge ${priMeta.cls}`}>{priMeta.label}</span></td>
-                    {/* สถานะเป็น read-only — การเปลี่ยนสถานะเป็นหน้าที่เจ้าหน้าที่ */}
-                    <td><span className={`badge ${statMeta.cls}`}>{statMeta.label}</span></td>
-                    <td className="muted small">{formatDateTime(t.created_at)}</td>
-                    <td>
-                      <button
-                        className="btn btn-sm btn-ghost"
-                        onClick={() => setActiveId(isActive ? null : t.id)}
-                      >
-                        {isActive ? 'ซ่อน' : 'รายละเอียด'}
-                      </button>
-                      <button className="btn btn-danger-sm" onClick={() => handleDelete(t.id)}>
-                        ลบ
-                      </button>
-                    </td>
-                  </tr>,
-                  isActive && (
-                    <tr className="detail-row" key={`${t.id}-detail`}>
-                      <td colSpan={7}>
-                        <TicketDetail ticket={t} getUserName={getUserName} />
-                      </td>
-                    </tr>
-                  ),
-                ]
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
+      {loading ? (
+        <p className="empty">กำลังโหลดข้อมูล...</p>
+      ) : tickets.length === 0 ? (
+        <p className="empty">ยังไม่มีคำร้องแจ้งปัญหา</p>
+      ) : (
+        <div className="ticket-cards">
+            {tickets.map((t) => {
+              const catMeta = TICKET_CATEGORIES[t.category] || { label: t.category, cls: 'badge-muted' }
+              const priMeta = TICKET_PRIORITIES[t.priority] || { label: t.priority, cls: 'badge-muted' }
+              const statMeta = TICKET_STATUSES[t.status] || { label: t.status, cls: 'badge-muted' }
+              const isActive = activeId === t.id
+              return (
+                <article className={`ticket-card status-${t.status}`} key={t.id}>
+                  <div className="ticket-card-head">
+                    <h3>{t.subject}</h3>
+                    <span className={`badge ${statMeta.cls}`}>{statMeta.label}</span>
+                  </div>
+                  <div className="ticket-card-badges">
+                    <span className={`badge ${catMeta.cls}`}>{catMeta.label}</span>
+                    <span className={`badge ${priMeta.cls}`}>เร่งด่วน: {priMeta.label}</span>
+                    <span className="muted small">{formatDateTime(t.created_at)}</span>
+                  </div>
+                  {isActive && <TicketDetail ticket={t} getUserName={getUserName} />}
+                  <div className="ticket-card-actions">
+                    <button
+                      className="btn btn-sm btn-ghost"
+                      onClick={() => setActiveId(isActive ? null : t.id)}
+                    >
+                      {isActive ? 'ซ่อนรายละเอียด' : 'ดูรายละเอียด'}
+                    </button>
+                    <button className="btn btn-danger-sm" onClick={() => handleDelete(t.id)}>
+                      ลบคำร้อง
+                    </button>
+                  </div>
+                </article>
+              )
+            })}
+          </div>
+        )
+      }
     </div>
   )
 }
