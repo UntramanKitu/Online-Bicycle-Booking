@@ -1,11 +1,11 @@
 import os
 import secrets
 from datetime import datetime, timedelta, timezone
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlsplit
 
 import httpx
 import jwt
-from fastapi import APIRouter, Cookie, HTTPException, Response
+from fastapi import APIRouter, Cookie, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
@@ -26,11 +26,19 @@ def frontend_url(path: str = "") -> str:
 
 
 @router.get("/google/login")
-def google_login():
+def google_login(request: Request):
     client_id = config("GOOGLE_CLIENT_ID")
     redirect_uri = config("GOOGLE_REDIRECT_URI")
     if not client_id or not redirect_uri:
         raise HTTPException(status_code=503, detail="Google OAuth ยังไม่ได้ตั้งค่าใน backend/.env")
+
+    # Cookie ผูกกับ host (localhost กับ 127.0.0.1 ถือเป็นคนละ host)
+    # ถ้าเข้า login ผ่าน host อื่นที่ไม่ใช่ host ของ redirect_uri cookie state จะไม่ถูกส่งกลับมาที่ callback
+    # จึง redirect ให้เข้าผ่าน host เดียวกับ redirect_uri ก่อน
+    callback = urlsplit(redirect_uri)
+    request_host = request.headers.get("host")
+    if request_host and request_host != callback.netloc:
+        return RedirectResponse(f"{callback.scheme}://{callback.netloc}{request.url.path}")
 
     state = secrets.token_urlsafe(32)
     query = urlencode({
@@ -48,9 +56,17 @@ def google_login():
 
 
 @router.get("/google/callback")
-async def google_callback(code: str, state: str, oauth_state: str | None = Cookie(default=None)):
-    if not oauth_state or not secrets.compare_digest(state, oauth_state):
-        raise HTTPException(status_code=400, detail="OAuth state ไม่ถูกต้องหรือหมดอายุ")
+async def google_callback(
+    code: str | None = None,
+    state: str | None = None,
+    error: str | None = None,
+    oauth_state: str | None = Cookie(default=None, alias=OAUTH_STATE_COOKIE),
+):
+    # Google จะ redirect กลับมาพร้อม code/state เสมอ ถ้าพารามิเตอร์ขาดหาย
+    # (เปิด/รีเฟรช URL callback ตรง ๆ) หรือผู้ใช้กดยกเลิกที่หน้า Google (error=access_denied)
+    # ให้กลับไปหน้า login พร้อมข้อความแทนการตอบ JSON error
+    if error or not code or not state or not oauth_state or not secrets.compare_digest(state, oauth_state):
+        return RedirectResponse(f"{frontend_url('/login')}?error=oauth_failed")
 
     async with httpx.AsyncClient(timeout=15) as client:
         token_response = await client.post("https://oauth2.googleapis.com/token", data={
@@ -100,7 +116,7 @@ async def google_callback(code: str, state: str, oauth_state: str | None = Cooki
 
 
 @router.get("/me")
-def current_user(access_token: str | None = Cookie(default=None)):
+def current_user(access_token: str | None = Cookie(default=None, alias=ACCESS_TOKEN_COOKIE)):
     if not access_token:
         return {"authenticated": False, "user": None}
     try:
