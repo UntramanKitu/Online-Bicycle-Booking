@@ -224,21 +224,6 @@ erDiagram
         datetime updated_at
     }
 
-    USAGE_HISTORY_LOG {
-        int id PK
-        int user_id FK
-        int bicycle_id FK
-        int booking_id FK
-        datetime start_time
-        datetime end_time
-        int duration_minutes
-        decimal distance_km
-        string starting_station
-        string ending_station
-        string status
-        datetime created_at
-    }
-
     SUPPORT_TICKET {
         int id PK
         int user_id FK
@@ -262,7 +247,6 @@ erDiagram
     UNIFIED_USER ||--o{ RETURN_RECORD : "returns bike"
     UNIFIED_USER ||--o{ FAVORITE : "saves"
     UNIFIED_USER ||--o{ RESERVATION_BOOKING : "makes"
-    UNIFIED_USER ||--o{ USAGE_HISTORY_LOG : "has"
     UNIFIED_USER ||--o{ SUPPORT_TICKET : "creates"
     UNIFIED_USER ||--o{ CAMPUS_ANNOUNCEMENT : "creates"
     UNIFIED_USER ||--o{ SYSTEM_AUDIT_LOG : "triggers"
@@ -274,7 +258,6 @@ erDiagram
     BICYCLE ||--o{ RETURN_RECORD : "returned as"
     BICYCLE ||--o{ DAMAGE_EVIDENCE : "has damage"
     BICYCLE ||--o{ RESERVATION_BOOKING : "reserved for"
-    BICYCLE ||--o{ USAGE_HISTORY_LOG : "tracked in"
     BICYCLE ||--o{ FAVORITE : "favorited as"
 
     STAFF_OFFICER ||--o{ MAINTENANCE : "assigned to fix"
@@ -283,7 +266,6 @@ erDiagram
     RESERVATION_BOOKING ||--o| RETURN_RECORD : "results in"
     RETURN_RECORD ||--o{ DAMAGE_EVIDENCE : "may have"
     RESERVATION_BOOKING ||--o{ FEEDBACK_RATING : "reviewed in"
-    RESERVATION_BOOKING ||--o| USAGE_HISTORY_LOG : "logged as"
 ```
 
 ---
@@ -335,7 +317,6 @@ erDiagram
 | ตาราง | คำอธิบาย | จุดที่แก้จากเดิม |
 |---|---|---|
 | `reservation_booking` | การจองล่วงหน้า + การยืม | `booking_type`, `status` → ENUM, `pickup_location`/`return_location` ยังเป็น string เหมือนเดิม |
-| `usage_history_log` | ประวัติการใช้งาน | โครงสร้างเดิม (`starting_station`/`ending_station` เป็น string) |
 | `support_ticket` | รับแจ้งปัญหา | `category`, `priority`, `status` → ENUM |
 
 ---

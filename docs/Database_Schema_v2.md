@@ -237,21 +237,6 @@ erDiagram
         datetime updated_at
     }
 
-    USAGE_HISTORY_LOG {
-        int id PK
-        int user_id FK
-        int bicycle_id FK
-        int booking_id FK
-        datetime start_time
-        datetime end_time
-        int duration_minutes
-        decimal distance_km
-        int starting_station_id FK
-        int ending_station_id FK
-        string status
-        datetime created_at
-    }
-
     SUPPORT_TICKET {
         int id PK
         int user_id FK
@@ -299,7 +284,6 @@ erDiagram
     UNIFIED_USER ||--o{ RETURN_RECORD : "returns bike"
     UNIFIED_USER ||--o{ FAVORITE : "saves"
     UNIFIED_USER ||--o{ RESERVATION_BOOKING : "makes"
-    UNIFIED_USER ||--o{ USAGE_HISTORY_LOG : "has"
     UNIFIED_USER ||--o{ SUPPORT_TICKET : "creates"
     UNIFIED_USER ||--o{ GROUP_RIDE : "leads"
     UNIFIED_USER ||--o{ GROUP_RIDE_MEMBER : "joins"
@@ -313,14 +297,12 @@ erDiagram
     BICYCLE ||--o{ RETURN_RECORD : "returned as"
     BICYCLE ||--o{ DAMAGE_EVIDENCE : "has damage"
     BICYCLE ||--o{ RESERVATION_BOOKING : "reserved for"
-    BICYCLE ||--o{ USAGE_HISTORY_LOG : "tracked in"
     BICYCLE ||--o{ FAVORITE : "favorited as"
     BICYCLE }o--|| STATION : "currently at"
 
     STATION ||--o{ FAVORITE : "favorited as"
     STATION ||--o{ RETURN_RECORD : "receives return"
     STATION ||--o{ RESERVATION_BOOKING : "pickup point"
-    STATION ||--o{ USAGE_HISTORY_LOG : "start/end point"
 
     STAFF_OFFICER ||--o{ MAINTENANCE : "assigned to fix"
     STAFF_OFFICER ||--o{ SUPPORT_TICKET : "handles"
@@ -328,7 +310,6 @@ erDiagram
     RESERVATION_BOOKING ||--o| RETURN_RECORD : "results in"
     RETURN_RECORD ||--o{ DAMAGE_EVIDENCE : "may have"
     RESERVATION_BOOKING ||--o{ FEEDBACK_RATING : "reviewed in"
-    RESERVATION_BOOKING ||--o| USAGE_HISTORY_LOG : "logged as"
 
     GROUP_RIDE ||--o{ GROUP_RIDE_MEMBER : "has members"
     UNIFIED_USER ||--o{ GROUP_RIDE : "leads"
@@ -385,7 +366,6 @@ erDiagram
 | ตาราง | คำอธิบาย | จุดที่แก้จากเดิม |
 |---|---|---|
 | `reservation_booking` | การจองล่วงหน้า + การยืม (พร้อมตรวจสอบ Availability) | `booking_type`, `status` → ENUM, เพิ่ม `pickup_station_id` / `return_station_id` เป็น FK แทน string เดิม |
-| `usage_history_log` | ประวัติการใช้งาน | `starting_station` / `ending_station` (string) → เปลี่ยนเป็น FK ไปยัง `station` |
 | `support_ticket` | รับแจ้งปัญหา | `category`, `priority`, `status` → ENUM |
 | `group_ride` *(ตารางใหม่)* | กลุ่มปั่นร่วมกัน (ตั้งกลุ่ม/เข้าร่วม/ยกเลิก) | ตารางใหม่ทั้งหมด รายละเอียดด้านล่าง |
 | `group_ride_member` *(ตารางใหม่)* | สมาชิกของกลุ่มปั่น (หัวหน้า/สมาชิก) | ตารางใหม่ รองรับเข้าร่วม/ออกจากกลุ่มเพื่อคืนโควตา |

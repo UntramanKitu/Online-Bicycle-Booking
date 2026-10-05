@@ -187,21 +187,6 @@ erDiagram
         datetime updated_at
     }
 
-    USAGE_HISTORY_LOG {
-        int id PK
-        int user_id FK
-        int bicycle_id FK
-        int booking_id FK
-        datetime start_time
-        datetime end_time
-        int duration_minutes
-        decimal distance_km
-        string starting_station
-        string ending_station
-        string status
-        datetime created_at
-    }
-
     SUPPORT_TICKET {
         int id PK
         int user_id FK
@@ -226,7 +211,6 @@ erDiagram
     UNIFIED_USER ||--o{ RETURN_RECORD : "returns bike"
     UNIFIED_USER ||--o{ PENALTY_STRIKE : "receives"
     UNIFIED_USER ||--o{ RESERVATION_BOOKING : "makes"
-    UNIFIED_USER ||--o{ USAGE_HISTORY_LOG : "has"
     UNIFIED_USER ||--o{ SUPPORT_TICKET : "creates"
     UNIFIED_USER ||--o{ CAMPUS_ANNOUNCEMENT : "creates"
     UNIFIED_USER ||--o{ SYSTEM_AUDIT_LOG : "triggers"
@@ -238,7 +222,6 @@ erDiagram
     BICYCLE ||--o{ RETURN_RECORD : "returned as"
     BICYCLE ||--o{ DAMAGE_EVIDENCE : "has damage"
     BICYCLE ||--o{ RESERVATION_BOOKING : "reserved for"
-    BICYCLE ||--o{ USAGE_HISTORY_LOG : "tracked in"
 
     STAFF_OFFICER ||--o{ MAINTENANCE : "assigned to fix"
     STAFF_OFFICER ||--o{ PENALTY_STRIKE : "issues"
@@ -248,7 +231,6 @@ erDiagram
     RETURN_RECORD ||--o{ DAMAGE_EVIDENCE : "may have"
     RETURN_RECORD ||--o{ PENALTY_STRIKE : "may incur"
     RESERVATION_BOOKING ||--o{ FEEDBACK_RATING : "reviewed in"
-    RESERVATION_BOOKING ||--o| USAGE_HISTORY_LOG : "logged as"
 ```
 
 ---
@@ -286,7 +268,6 @@ Database Schema นี้แปลงมาจาก Class Diagram ของร�
 | `damage_evidence` | id | return_record_id → return_record, bicycle_id → bicycle |
 | `penalty_strike` | id | user_id → unified_user, return_record_id → return_record, given_by → unified_user (staff) |
 | `reservation_booking` | id | user_id → unified_user, bicycle_id → bicycle |
-| `usage_history_log` | id | user_id → unified_user, bicycle_id → bicycle, booking_id → reservation_booking |
 | `support_ticket` | id | user_id → unified_user, assigned_to → unified_user (staff) |
 
 ### ⚠️ ข้อควรพิจารณาเพิ่มเติม
@@ -298,6 +279,6 @@ Database Schema นี้แปลงมาจาก Class Diagram ของร�
 
 2. **`staff_officer.user_id`** ควรมี `UNIQUE constraint` เพราะเป็นความสัมพันธ์ 1:0..1 กับ `unified_user`
 
-3. **`return_record.return_station_id`** และ `usage_history_log.starting_station` / `ending_station` — ในไดอะแกรมเดิมยังเป็น string/int เปล่า ๆ ถ้ามีตาราง Station แยกในระบบจริง ควรทำเป็น FK ไปยังตาราง `station` แทน
+3. **`return_record.return_station_id`** — ในไดอะแกรมเดิมยังเป็น string/int เปล่า ๆ ถ้ามีตาราง Station แยกในระบบจริง ควรทำเป็น FK ไปยังตาราง `station` แทน
 
 4. **Cross-service tables (Monolith vs FastAPI)** — เนื่องจากระบบแบ่งเป็น Django Monolith และ FastAPI/React แยกกัน หากใช้ database คนละตัว ควรพิจารณาว่า field ที่อ้างข้ามฝั่ง (เช่น `user_id`, `bicycle_id` ที่ FastAPI service ต้องอ้างถึง) จะ sync กันอย่างไร (เช่น ผ่าน API แทน FK ตรง หรือใช้ shared DB)

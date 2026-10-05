@@ -190,18 +190,6 @@ rectangle "5️⃣ Booking & Support (ชัยอนันต์)" as p5 #FFEBE
         checked_out_at / in_at : datetime
     }
 
-    entity usage_history_log {
-        * **id** : int <<PK>>
-        --
-        user_id : int <<FK>>
-        bicycle_id : int <<FK>>
-        booking_id : int <<FK>>
-        duration_minutes : int
-        distance_km : decimal
-        starting_station : string
-        ending_station : string
-    }
-
     entity support_ticket {
         * **id** : int <<PK>>
         --
@@ -249,7 +237,6 @@ unified_user ||--o{ bicycle_comparison : "compares"
 unified_user ||--o{ notification : "receives"
 unified_user ||--o{ feedback_rating : "writes"
 unified_user ||--o{ reservation_booking : "makes"
-unified_user ||--o{ usage_history_log : "has"
 unified_user ||--o{ support_ticket : "creates"
 unified_user ||--o{ campus_announcement : "creates"
 unified_user ||--o{ system_audit_log : "triggers"
@@ -261,7 +248,6 @@ bicycle ||--o{ feedback_rating : "rated in"
 bicycle ||--o{ return_record : "returned as"
 bicycle ||--o{ damage_evidence : "has damage"
 bicycle ||--o{ reservation_booking : "reserved for"
-bicycle ||--o{ usage_history_log : "tracked in"
 bicycle ||--o{ favorite : "favorited as"
 
 staff_officer ||--o{ maintenance : "assigned to fix"
@@ -270,7 +256,6 @@ staff_officer ||--o{ support_ticket : "handles"
 reservation_booking ||--o| return_record : "results in"
 return_record ||--o{ damage_evidence : "may have"
 reservation_booking ||--o{ feedback_rating : "reviewed in"
-reservation_booking ||--o| usage_history_log : "logged as"
 
 group_ride ||--o{ group_ride_member : "has"
 unified_user ||--o{ group_ride : "leads"
