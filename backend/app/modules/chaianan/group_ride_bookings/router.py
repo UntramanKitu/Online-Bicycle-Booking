@@ -3,7 +3,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.crud.group_ride import (
+from .crud import (
     GroupRideError,
     cancel_group_ride,
     create_group_ride,
