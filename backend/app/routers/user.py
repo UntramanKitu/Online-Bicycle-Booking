@@ -1,72 +1,103 @@
 from typing import List
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
+from app.database import get_db
+from app.models.unified_user import UnifiedUser
+from app.modules.auth.deps import require_admin
+from app.modules.auth.roles import resolve_role
 from app.schemas.user import UserResponse
+
+
+class UpdateRoleRequest(BaseModel):
+    role: str  # 'admin' หรือ 'user'
 
 router = APIRouter()
 
-# ============================================================
-# Mock Data ผู้ใช้ (ใช้สลับ user ตอน demo — ยังไม่ได้ผูกกับ Django Monolith)
-# ชื่ออ้างอ้าษของมาจาก เพิ่ยศสี้อาชาพชรับผิดชอบที่ docs\Database_Schema_v2 (1).md
-# ตาราง unified_user เป็นของฝั่งคะของ Django — ฝั่นนี้ยังไม่แต้ตารางนั้น
-# ============================================================
-_UNI = "uni.ac.th"
-_FACULTY = "คณะวิทยศาสตร์"
-_DEPARTMENT = "วิทยาการคอมพิวเตอร์"
 
-MOCK_USERS = [
-    {
-        "id": 1, "username": "piyapong.s", "email": f"piyapong.s@{_UNI}",
-        "first_name": "ปิยะพงษ์", "last_name": "สุขใจ", "full_name": "ปิยะพงษ์ สุขใจ",
-        "student_id": "67114540101", "faculty": _FACULTY, "department": _DEPARTMENT,
-        "role": "student", "status": "active",
-    },
-    {
-        "id": 2, "username": "weerapong.t", "email": f"weerapong.t@{_UNI}",
-        "first_name": "วีรพันธ์", "last_name": "ทองแท้", "full_name": "วีรพันธ์ ทองแท้",
-        "student_id": "67114540102", "faculty": _FACULTY, "department": _DEPARTMENT,
-        "role": "student", "status": "active",
-    },
-    {
-        "id": 3, "username": "ekapol.r", "email": f"ekapol.r@{_UNI}",
-        "first_name": "เอกพล", "last_name": "รักเรียน", "full_name": "เอกพล รักเรียน",
-        "student_id": "67114540103", "faculty": _FACULTY, "department": _DEPARTMENT,
-        "role": "student", "status": "active",
-    },
-    {
-        "id": 4, "username": "nathiada.k", "email": f"nathiada.k@{_UNI}",
-        "first_name": "ณธิดา", "last_name": "กาญจน์", "full_name": "ณธิดา กาญจน์",
-        "student_id": "67114540104", "faculty": _FACULTY, "department": _DEPARTMENT,
-        "role": "student", "status": "active",
-    },
-    {
-        "id": 5, "username": "chaiyanan.b", "email": f"chaiyanan.b@{_UNI}",
-        "first_name": "ชัยอนันต์", "last_name": "บุณรังษี", "full_name": "ชัยอนันต์ บุณรังษี",
-        "student_id": "67114540105", "faculty": _FACULTY, "department": _DEPARTMENT,
-        "role": "student", "status": "active",
-    },
-    {
-        "id": 6, "username": "bike.officer", "email": f"bike.officer@{_UNI}",
-        "first_name": "ผู้ดูล", "last_name": "จักรยาน", "full_name": "ผู้ดูลจักรยาน",
-        "student_id": None, "faculty": "สำนักงานบริการ", "department": "จัดการจักรยาน",
-        "role": "officer", "status": "active",
-    },
-]
+def _db_user_to_response(user: UnifiedUser) -> dict:
+    """แปลงแถว accounts_unifieduser (คอลัมน์ Django AbstractUser) ให้ตรง UserResponse
+
+    ตารางจริงไม่มีคอลัมน์ student_id / faculty / department / role / status
+    เติมค่า default ให้ frontend แสดงผลได้โดยไม่ต้องแก้ shape เดิม
+    """
+    full_name = (user.full_name or "").strip() or user.username
+    return {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "full_name": full_name,
+        "student_id": None,
+        "faculty": None,
+        "department": None,
+        "role": resolve_role(user),
+        "status": "active" if user.is_active else "inactive",
+    }
+
 
 
 @router.get("/users", response_model=List[UserResponse])
 def list_users(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
+    db: Session = Depends(get_db),
 ):
-    """Mock: รายชื่อผู้ใช้ (frontend ใช้สำหรับเลือกผู้ใช้ปัจจุบัน)"""
-    return MOCK_USERS[skip : skip + limit]
+    """รายชื่อผู้ใช้ — ผู้ใช้ตัวจริงจาก Google login ทั้งหมด (ไม่มี mock)"""
+    rows = (
+        db.query(UnifiedUser)
+        .filter(UnifiedUser.is_active == True)  # noqa: E712 — SQLAlchemy ต้องใช้ == กับคอลัมน์
+        .order_by(UnifiedUser.id)
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+    return [_db_user_to_response(u) for u in rows]
 
 
 @router.get("/users/{user_id}", response_model=UserResponse)
-def read_user(user_id: int):
-    for user in MOCK_USERS:
-        if user["id"] == user_id:
-            return user
+def read_user(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(UnifiedUser).filter(UnifiedUser.id == user_id).first()
+    if user is not None:
+        return _db_user_to_response(user)
     raise HTTPException(status_code=404, detail="User not found")
+
+
+@router.get("/admin/users", response_model=List[UserResponse])
+def admin_list_all_users(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(200, ge=1, le=1000),
+    db: Session = Depends(get_db),
+    _admin: UnifiedUser = Depends(require_admin),
+):
+    """[แอดมินเท่านั้น] รายชื่อผู้ใช้ทุกคนรวมทั้ง inactive"""
+    rows = (
+        db.query(UnifiedUser)
+        .order_by(UnifiedUser.id)
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+    return [_db_user_to_response(u) for u in rows]
+
+
+@router.patch("/admin/users/{user_id}/role", response_model=UserResponse)
+def admin_update_role(
+    user_id: int,
+    body: UpdateRoleRequest,
+    db: Session = Depends(get_db),
+    _admin: UnifiedUser = Depends(require_admin),
+):
+    """[แอดมินเท่านั้น] เปลี่ยน role ผู้ใช้ — 'admin' ตั้ง is_staff=True, 'user' ตั้ง is_staff=False"""
+    if body.role not in {"admin", "user"}:
+        raise HTTPException(status_code=422, detail="role ต้องเป็น 'admin' หรือ 'user' เท่านั้น")
+    user = db.query(UnifiedUser).filter(UnifiedUser.id == user_id).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.is_staff = body.role == "admin"
+    db.commit()
+    db.refresh(user)
+    return _db_user_to_response(user)

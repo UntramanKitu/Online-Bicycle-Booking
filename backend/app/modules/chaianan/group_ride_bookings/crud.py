@@ -17,11 +17,37 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 
 from app.models.group_ride import GroupRide, GroupRideMember
+from app.models.nathida import Notification
+from app.models.unified_user import UnifiedUser
 from app.schemas.group_ride import GroupRideCreate, GroupRideUpdate
 
 
 class GroupRideError(Exception):
     """Error ทางธุรกิจของกลุ่มปั่นร่วมกัน (เปลี่ยนเป็น HTTPException ที่ router)"""
+
+
+# ==================== การแจ้งเตือนเหตุการณ์กลุ่มปั่น ====================
+
+def _user_label(db: Session, user_id: int) -> str:
+    """ชื่อแสดงของผู้ใช้สำหรับข้อความแจ้งเตือน — ถ้าไม่มี user จริงใช้เลขแทน"""
+    user = db.get(UnifiedUser, user_id)
+    if user is None:
+        return f"ผู้ใช้ #{user_id}"
+    name = f"{user.first_name} {user.last_name}".strip()
+    return name or user.username or f"ผู้ใช้ #{user_id}"
+
+
+def _notify(db: Session, user_id: Optional[int], title: str, message: str) -> None:
+    """สร้าง notification ใน transaction เดียวกับ operation หลัก — เรียกก่อน db.commit()
+
+    ข้ามเงียบถ้า user_id ไม่มีอยู่จริง (ตาราง notifications มี FK ชี้ accounts_unifieduser
+    แต่ group_ride_member ไม่มี FK จึงอาจมี user_id ปลอมจากการทดสอบ)
+    """
+    if user_id is None:
+        return
+    if db.get(UnifiedUser, user_id) is None:
+        return
+    db.add(Notification(user_id=user_id, title=title, message=message, is_read=False))
 
 
 # ==================== Read ====================
@@ -89,12 +115,41 @@ def get_group_members(db: Session, group_ride_id: int) -> List[GroupRideMember]:
     )
 
 
+def get_user_active_group(db: Session, user_id: int, exclude_group_id: Optional[int] = None) -> Optional[GroupRide]:
+    """กลุ่มที่ผู้ใช้ยังเป็นสมาชิกอยู่และยังใช้งานได้ (open/full) — กติกา 1 คน / 1 กลุ่ม
+
+    ใช้ทั้งตอนสร้างกลุ่มและตอนเข้าร่วมกลุ่ม เพื่อป้องกันคน ๆ เดียวอยู่ในหลายกลุ่มพร้อมกัน
+    (กลุ่มที่ถูกยกเลิก/สิ้นสุดแล้วไม่นับ ส่วนสมาชิกที่ left ไปแล้วก็ไม่นับ)
+    """
+    query = (
+        db.query(GroupRide)
+        .join(GroupRideMember, GroupRideMember.group_ride_id == GroupRide.id)
+        .filter(
+            GroupRideMember.user_id == user_id,
+            GroupRideMember.left_at.is_(None),
+            GroupRide.status.in_(("open", "full")),
+        )
+        .order_by(GroupRide.id.asc())
+    )
+    if exclude_group_id is not None:
+        query = query.filter(GroupRide.id != exclude_group_id)
+    return query.first()
+
+
 # ==================== Create ====================
 
 def create_group_ride(db: Session, group: GroupRideCreate) -> GroupRide:
     """หัวหน้ากลุ่มสร้างกลุ่มปั่นใหม่ — หัวหน้าจะถูกเพิ่มเป็นสมาชิก (role=leader) อัตโนมัติ"""
     if group.max_members < 2:
         raise GroupRideError("ต้องเปิดรับสมาชิกอย่างน้อย 2 คน (รวมหัวหน้ากลุ่ม)")
+
+    # กติกา 1 คน / 1 กลุ่ม — ยังเป็นสมาชิกกลุ่มอื่นอยู่ สร้างกลุ่มใหม่ไม่ได้
+    other_group = get_user_active_group(db, group.created_by)
+    if other_group is not None:
+        raise GroupRideError(
+            f'คุณอยู่ในกลุ่ม "{other_group.name}" อยู่แล้ว — 1 คนอยู่ได้เพียง 1 กลุ่ม '
+            "(ออกจากกลุ่มเดิมหรือยกเลิกกลุ่มก่อนจึงจะสร้างกลุ่มใหม่ได้)"
+        )
 
     db_group = GroupRide(
         created_by=group.created_by,
@@ -138,6 +193,19 @@ def update_group_ride(db: Session, group_ride_id: int, user_id: int, group: Grou
     else:
         db_group.status = "open"
 
+    # แจ้งสมาชิก (ยกเว้นหัวหน้ากลุ่มที่เป็นคนแก้) ว่ากลุ่มถูกแก้ไข — เวลา/จุดหมายอาจเปลี่ยน
+    if update_data:
+        for member in get_group_members(db, group_ride_id):
+            if member.user_id == user_id:
+                continue
+            _notify(
+                db,
+                member.user_id,
+                "กลุ่มปั่นถูกแก้ไข",
+                f'หัวหน้ากลุ่ม "{db_group.name}" แก้ไขรายละเอียดกลุ่ม — '
+                "กรุณาตรวจสอบเวลานัดหมาย/จุดหมายใหม่",
+            )
+
     db.commit()
     db.refresh(db_group)
     return db_group
@@ -165,6 +233,14 @@ def join_group_ride(db: Session, group_ride_id: int, user_id: int) -> Optional[G
     if existing is not None:
         raise GroupRideError("คุณเข้าร่วมกลุ่มนี้อยู่แล้ว")
 
+    # กติกา 1 คน / 1 กลุ่ม — ห้ามเข้ากลุ่มใหม่ขณะที่ยังเป็นสมาชิกกลุ่มอื่นที่ยัง active อยู่
+    other_group = get_user_active_group(db, user_id, exclude_group_id=group_ride_id)
+    if other_group is not None:
+        raise GroupRideError(
+            f'คุณอยู่ในกลุ่ม "{other_group.name}" อยู่แล้ว — 1 คนเข้าร่วมได้เพียง 1 กลุ่ม '
+            "(ออกจากกลุ่มเดิมก่อนจึงจะเข้าร่วมกลุ่มใหม่ได้)"
+        )
+
     if db_group.current_members >= db_group.max_members:
         raise GroupRideError("กลุ่มเต็มแล้ว ไม่สามารถเข้าร่วมได้")
 
@@ -186,6 +262,28 @@ def join_group_ride(db: Session, group_ride_id: int, user_id: int) -> Optional[G
         previous.joined_at = datetime.now(timezone.utc)
     else:
         db.add(GroupRideMember(group_ride_id=group_ride_id, user_id=user_id, role="member"))
+
+    # แจ้งหัวหน้ากลุ่มว่ามีคนเข้าร่วม (+ บอกด้วยถ้ากลุ่มเต็มเพราะการเข้าร่วมนี้)
+    if db_group.created_by != user_id:
+        full_note = " — กลุ่มเต็มแล้ว" if db_group.status == "full" else ""
+        _notify(
+            db,
+            db_group.created_by,
+            "มีผู้เข้าร่วมกลุ่มปั่น",
+            f'{_user_label(db, user_id)} เข้าร่วมกลุ่ม "{db_group.name}" แล้ว '
+            f"(สมาชิก {db_group.current_members}/{db_group.max_members}){full_note}",
+        )
+    # กลุ่มเต็ม → แจ้งสมาชิกทุกคน (ยกเว้นหัวหน้าที่ได้รับแจ้งด้านบนแล้ว)
+    if db_group.status == "full":
+        for member in get_group_members(db, group_ride_id):
+            if member.user_id == db_group.created_by:
+                continue
+            _notify(
+                db,
+                member.user_id,
+                "กลุ่มปั่นเต็มแล้ว",
+                f'กลุ่ม "{db_group.name}" มีสมาชิกครบ {db_group.max_members} คนแล้ว — เตรียมตัวออกเดินทางได้เลย',
+            )
 
     db.commit()
     db.refresh(db_group)
@@ -220,6 +318,16 @@ def leave_group_ride(db: Session, group_ride_id: int, user_id: int) -> Optional[
     if db_group.current_members < db_group.max_members:
         db_group.status = "open"
 
+    # แจ้งหัวหน้ากลุ่มว่ามีสมาชิกออกจากกลุ่ม (คืนโควตาให้เปิดรับใหม่)
+    if db_group.created_by != user_id:
+        _notify(
+            db,
+            db_group.created_by,
+            "สมาชิกออกจากกลุ่มปั่น",
+            f'{_user_label(db, user_id)} ออกจากกลุ่ม "{db_group.name}" แล้ว '
+            f"(เหลือสมาชิก {db_group.current_members} คน — กลุ่มกลับเปิดรับสมาชิก)",
+        )
+
     db.commit()
     db.refresh(db_group)
     return db_group
@@ -238,6 +346,18 @@ def cancel_group_ride(db: Session, group_ride_id: int, user_id: int) -> Optional
         raise GroupRideError("กลุ่มนี้ถูกยกเลิกไปแล้ว")
 
     db_group.status = "cancelled"
+
+    # แจ้งสมาชิกทุกคน (ยกเว้นหัวหน้ากลุ่มที่เป็นคนยกเลิก) ว่ากลุ่มถูกยกเลิก
+    for member in get_group_members(db, group_ride_id):
+        if member.user_id == user_id:
+            continue
+        _notify(
+            db,
+            member.user_id,
+            "กลุ่มปั่นถูกยกเลิก",
+            f'หัวหน้ากลุ่มยกเลิกกลุ่ม "{db_group.name}" — นัดหมายปั่นรอบนี้เป็นอันยกเลิก',
+        )
+
     db.commit()
     db.refresh(db_group)
     return db_group

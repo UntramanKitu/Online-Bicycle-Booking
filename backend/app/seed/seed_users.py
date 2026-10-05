@@ -1,3 +1,11 @@
+"""Seed ผู้ใช้ทดสอบในตาราง accounts_unifieduser (ตรงกับฝั่ง Django)
+
+สคริปต์นี้ยังไม่ถูกเรียกจาก startup — เรียกด้วยมือเมื่อต้องการเพิ่มผู้ใช้:
+    uv run python -m app.seed.seed_users
+
+คอลัมน์ตรงกับ Django AbstractUser ทั้งหมด เพื่อให้ฝั่ง Django อ่านได้ทันที
+"""
+
 import sys
 
 # กัน App crash เมื่อ stdout/stderr มี encoding ที่พิมพ์ไทย/emoji ไม่ได้ (เช่น Windows cp874)
@@ -9,71 +17,61 @@ if hasattr(sys.stderr, "reconfigure"):
 from app.database import SessionLocal
 from app.models.unified_user import UnifiedUser
 
+# ชื่ออ้างอิงจากหัวข้อผู้รับผิดชอบใน docs/Database_Schema_v2 (1).md
 USERS = [
     {
-        "id": 1,
-        "username": "somchai.j",
-        "password_hash": "hashed-demo",
-        "email": "somchai.j@uni.ac.th",
-        "first_name": "สมชาย",
-        "last_name": "ใจดี",
-        "student_id": "67114540101",
-        "faculty": "วิทยาศาสตร์",
-        "department": "วิทยาการคอมพิวเตอร์",
-        "role": "student",
-        "status": "active",
+        "username": "piyapong.s",
+        "email": "piyapong.s@uni.ac.th",
+        "first_name": "ปิยะพงษ์",
+        "last_name": "สุขใจ",
+        "is_staff": False,
+        "is_superuser": False,
+        "is_active": True,
     },
     {
-        "id": 2,
-        "username": "nathiada.k",
-        "password_hash": "hashed-demo",
-        "email": "nathiada.k@uni.ac.th",
-        "first_name": "ณธিদा",
-        "last_name": "गाहवा",
-        "student_id": "67114540102",
-        "faculty": "วิศวกรรมคอมพิวเตอร์",
-        "department": "ระบบสารสนเทศ",
-        "role": "student",
-        "status": "active",
+        "username": "weerapong.t",
+        "email": "weerapong.t@uni.ac.th",
+        "first_name": "วีรพันธ์",
+        "last_name": "ทองแท้",
+        "is_staff": False,
+        "is_superuser": False,
+        "is_active": True,
     },
     {
-        "id": 3,
         "username": "ekapol.r",
-        "password_hash": "hashed-demo",
         "email": "ekapol.r@uni.ac.th",
-        "first_name": "একপল",
-        "last_name": "রাকরেয়িং",
-        "student_id": "67114540103",
-        "faculty": "วิศวกรรมคอม্পিউটার",
-        "department": "নেটওয়ার্ক",
-        "role": "student",
-        "status": "active",
+        "first_name": "เอกพล",
+        "last_name": "รักเรียน",
+        "is_staff": False,
+        "is_superuser": False,
+        "is_active": True,
     },
     {
-        "id": 4,
+        "username": "nathiada.k",
+        "email": "nathiada.k@uni.ac.th",
+        "first_name": "ณธิดา",
+        "last_name": "กาญจน์",
+        "is_staff": False,
+        "is_superuser": False,
+        "is_active": True,
+    },
+    {
         "username": "chaiyanan.b",
-        "password_hash": "hashed-demo",
         "email": "chaiyanan.b@uni.ac.th",
-        "first_name": "চৈয়ানন্ত",
-        "last_name": "বুয়রেণ্গশ্রী",
-        "student_id": "67114540104",
-        "faculty": "วิশেৱकম্পিউটার",
-        "department": "সফটওয়্যার ইঞ্জিনিয়ারিং",
-        "role": "student",
-        "status": "active",
+        "first_name": "ชัยอนันต์",
+        "last_name": "บุญรังษี",
+        "is_staff": False,
+        "is_superuser": False,
+        "is_active": True,
     },
     {
-        "id": 5,
-        "username": "officer.bike",
-        "password_hash": "hashed-demo",
-        "email": "officer.bike@uni.ac.th",
-        "first_name": "ン色",
-        "last_name": "નિયંત્રક",
-        "student_id": None,
-        "faculty": "สำนักงานบริการ",
-        "department": "จัดการจักรยาน",
-        "role": "officer",
-        "status": "active",
+        "username": "bike.officer",
+        "email": "bike.officer@uni.ac.th",
+        "first_name": "ผู้ดูแล",
+        "last_name": "จักรยาน",
+        "is_staff": True,
+        "is_superuser": False,
+        "is_active": True,
     },
 ]
 
@@ -81,12 +79,13 @@ USERS = [
 def main():
     db = SessionLocal()
     try:
-        existing = {u.id for u in db.query(UnifiedUser).all()}
+        existing = {u.username for u in db.query(UnifiedUser).all()}
         added = 0
         for data in USERS:
-            if data["id"] in existing:
+            if data["username"] in existing:
                 continue
-            db.add(UnifiedUser(**data))
+            # password ว่าง = บัญชี OAuth ไม่ให้ล็อกอินด้วยรหัสผ่าน (ตรงพฤติกรรม Django unusable password)
+            db.add(UnifiedUser(password="", **data))
             added += 1
         db.commit()
         if added:
@@ -99,3 +98,7 @@ def main():
         raise
     finally:
         db.close()
+
+
+if __name__ == "__main__":
+    main()

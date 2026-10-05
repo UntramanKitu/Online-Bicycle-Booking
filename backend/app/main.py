@@ -17,10 +17,14 @@ from app.modules.auth import router as auth
 from app.modules.chaianan.reservation_booking import router as reservation_booking
 from app.modules.chaianan.group_ride_bookings import router as group_ride
 from app.modules.chaianan.support_tickets import router as support_ticket
+from app.modules.nathida import maintenance as nathida_maintenance
+from app.modules.nathida import notification as nathida_notification
+from app.modules.nathida import review as nathida_review
 from app.models.bicycle import Bicycle
 from app.models.unified_user import UnifiedUser
 from app.models.booking import ReservationBooking, SupportTicket
 from app.models.group_ride import GroupRide, GroupRideMember
+from app.models.nathida import MaintenanceReport, Notification, Review
 from app.seed.seed_bookings import main as seed_main
 from app.seed.seed_bicycles import main as seed_bicycles
 
@@ -33,6 +37,9 @@ app.include_router(group_ride.router, prefix="/api", tags=["group-ride"])
 app.include_router(bicycle.router, prefix="/api", tags=["bicycle"])
 app.include_router(user.router, prefix="/api", tags=["users"])
 app.include_router(auth.router, prefix="/api")
+app.include_router(nathida_notification.router)
+app.include_router(nathida_maintenance.router)
+app.include_router(nathida_review.router)
 
 # สร้างตาราง (ทำซ้ำได้ / idempotent — ใช้ checkfirst ของ SQLAlchemy)
 TABLES = [
@@ -42,6 +49,9 @@ TABLES = [
     GroupRideMember.__table__,
     Bicycle.__table__,
     UnifiedUser.__table__,
+    Notification.__table__,
+    MaintenanceReport.__table__,
+    Review.__table__,
 ]
 
 # CORS: รองรับทั้ง localhost และ 127.0.0.1 (เบราว์เซอร์ถือเป็น origin คนละตัว)
@@ -69,24 +79,37 @@ app.add_middleware(
 )
 
 
-def migrate_unified_user():
-    with engine.begin() as connection:
-        for column in ("google_sub", "email", "display_name", "avatar_url"):
-            connection.execute(text(f"ALTER TABLE unified_user ADD COLUMN IF NOT EXISTS {column} VARCHAR(500)"))
-
-
 def migrate_reservation_booking():
     """เพิ่มคอลัมน์ note ให้ตารางที่มีอยู่ก่อน (create_all ไม่เพิ่มคอลัมน์ให้ตารางเก่า)"""
     with engine.begin() as connection:
         connection.execute(text("ALTER TABLE reservation_booking ADD COLUMN IF NOT EXISTS note TEXT"))
 
+
+def migrate_review_rating():
+    """เปลี่ยนคอลัมน์ reviews.rating จาก integer เป็น float (รองรับครึ่งดาว)
+
+    create_all ไม่แก้ type คอลัมน์เก่า — ต้อง ALTER เองแบบ idempotent
+    """
+    with engine.begin() as connection:
+        col_type = connection.execute(text(
+            "SELECT data_type FROM information_schema.columns "
+            "WHERE table_name = 'reviews' AND column_name = 'rating'"
+        )).scalar()
+        if col_type is None:
+            return  # ตารางยังไม่ถูกสร้าง (DB ใหม่) — create_all จะสร้างเป็น float ให้เอง
+        if col_type in ("integer", "bigint", "smallint", "numeric"):
+            connection.execute(text(
+                "ALTER TABLE reviews ALTER COLUMN rating TYPE DOUBLE PRECISION "
+                "USING rating::DOUBLE PRECISION"
+            ))
+
 @app.on_event("startup")
 def startup():
-    # ต้องสร้างตารางก่อนเสมอ ไม่งั้น migrate_unified_user() จะ ALTER ตารางที่ยังไม่มี
+    # ต้องสร้างตารางก่อนเสมอ ไม่งั้น migrate_reservation_booking() จะ ALTER ตารางที่ยังไม่มี
     # (พังทันทีถ้าเป็น DB ใหม่ที่ยังไม่เคย seed)
     Base.metadata.create_all(bind=engine, tables=TABLES)
-    migrate_unified_user()
     migrate_reservation_booking()
+    migrate_review_rating()
     seed_bicycles()
     seed_main()
 

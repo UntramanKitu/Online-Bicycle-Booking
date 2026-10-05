@@ -22,5 +22,6 @@ export function formatDateTime(iso) {
     day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
+    hour12: false, // เราไม่ใช้ AM/PM — แสดงเวลาแบบ 24 ชั่วโมงเสมอ
   })
 }

@@ -59,7 +59,27 @@ print(f"[4] callback without cookie -> {r.status_code} {loc!r}")
 if not loc.endswith("/login?error=oauth_failed"):
     failures.append("ไม่มี cookie ต้องถูกปฏิเสธ (redirect กลับ /login?error=oauth_failed)")
 
-# 5) /me ต้องอ่าน cookie ชื่อ bikea_access_token
+# 5) /me ต้องอ่าน cookie ชื่อ bikea_access_token แล้วดึงโปรไฟล์จาก DB
+# สร้าง user จริงใน DB ก่อน (override get_db ให้ใช้ SQLite memory — ไม่แตะ Django/Postgres)
+import sqlalchemy
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
+from app.database import Base, get_db
+from app.models.unified_user import UnifiedUser
+
+_test_engine = sqlalchemy.create_engine(
+    "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
+)
+Base.metadata.create_all(_test_engine, tables=[UnifiedUser.__table__])
+_TestSession = sessionmaker(bind=_test_engine)
+db = _TestSession()
+db.add(UnifiedUser(
+    id=1, password="", username="test.user", email="t@e.com",
+    first_name="Test", last_name="User", is_staff=False, is_active=True,
+))
+db.commit()
+db.close()
+app.dependency_overrides[get_db] = lambda: _TestSession()
 token = pyjwt.encode({"sub": "1", "email": "t@e.com"}, os.environ.get("JWT_SECRET", "") or "development-only-secret", algorithm="HS256")
 r = client.get("/api/auth/me", cookies={ACCESS_TOKEN_COOKIE: token})
 print(f"[5] /me with correct cookie -> {r.status_code} {r.json()}")

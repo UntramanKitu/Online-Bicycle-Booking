@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { api, getApiError } from '../../../api'
 import { GROUP_STATUSES } from '../../../constants'
 import { formatDateTime, toIso, toLocalInputValue } from '../../../utils'
+import { DateTime24 } from '../../../components/Time24'
 import { useCurrentUser } from '../../../context/currentUser'
 
 const emptyForm = () => ({
@@ -20,9 +21,9 @@ const tabs = [
 ]
 
 export default function GroupRidesPage() {
-  const { userId, getUserName } = useCurrentUser()
+  const { userId, currentUser, usersLoading, getUserName, refreshNotifications } = useCurrentUser()
   const [groups, setGroups] = useState([])
-  const [joined, setJoined] = useState(new Set())
+  const [myGroups, setMyGroups] = useState([])
   const [totalCount, setTotalCount] = useState(0)
   // แยกสถานะโหลดครั้งแรกออกจากการกดสลับแท็บ
   // ถ้าใช้ loading เดียว การกดแท็บจะทำให้กริดทั้งหมดถูกแทนด้วย "กำลังโหลด..." ทั้งหน้า
@@ -40,9 +41,9 @@ export default function GroupRidesPage() {
   async function loadJoined() {
     try {
       const res = await api.get('/group-rides', { params: { user_id: userId } })
-      setJoined(new Set(res.data.map((g) => g.id)))
+      setMyGroups(res.data)
     } catch {
-      setJoined(new Set())
+      setMyGroups([])
     }
   }
 
@@ -66,12 +67,13 @@ export default function GroupRidesPage() {
   }
 
   useEffect(() => {
+    if (usersLoading || !userId) return
     const timer = window.setTimeout(() => {
       load(true)
       loadJoined()
     }, 0)
     return () => window.clearTimeout(timer)
-  }, [status, userId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [status, userId, usersLoading]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function toggleMembers(id) {
     const next = { ...expanded, [id]: !expanded[id] }
@@ -108,6 +110,7 @@ export default function GroupRidesPage() {
       setShowForm(false)
       load()
       loadJoined()
+      refreshNotifications()
     } catch (err) {
       setMessage({ type: 'error', text: getApiError(err) })
     } finally {
@@ -142,6 +145,8 @@ export default function GroupRidesPage() {
       await actionFn()
       load()
       loadJoined()
+      // การแจ้งเตือนกลุ่มปั่น (เข้าร่วม/ออก/ยกเลิก/แก้ไข) สร้างจาก backend — ดึงล่าสุดมาอัปเดตกระดิ่ง
+      refreshNotifications()
     } catch (err) {
       setMessage({ type: 'error', text: getApiError(err) })
     }
@@ -155,6 +160,15 @@ export default function GroupRidesPage() {
   }
   const handleSaveEdit = (id, data) =>
     runAction(() => api.put(`/group-rides/${id}`, data, { params: { user_id: userId } }))
+
+  // กลุ่มที่ฉันเป็นสมาชิก — ใช้แสดงแท็ก "เข้าร่วมแล้ว" และกติกา 1 คน / 1 กลุ่ม
+  // (กติกานับเฉพาะกลุ่มที่ยัง active: open/full ไม่นับ cancelled/completed)
+  const joined = new Set(myGroups.map((g) => g.id))
+  const myActiveGroup = myGroups.find((g) => g.status === 'open' || g.status === 'full') || null
+
+  if (!usersLoading && !currentUser) {
+    return <p className="empty">กรุณาเข้าสู่ระบบด้วย Google ก่อนใช้งาน</p>
+  }
 
   return (
     <div className="page-section">
@@ -202,12 +216,11 @@ export default function GroupRidesPage() {
             />
           </div>
           <div className="field">
-            <label>เวลานัดหมาย *</label>
-            <input
-              type="datetime-local"
+            <label>เวลานัดหมาย * (รูปแบบ 24 ชั่วโมง)</label>
+            <DateTime24
               required
               value={form.meetup_time}
-              onChange={(e) => updateField('meetup_time', e.target.value)}
+              onChange={(v) => updateField('meetup_time', v)}
             />
           </div>
           <div className="field">
@@ -229,8 +242,14 @@ export default function GroupRidesPage() {
               onChange={(e) => updateField('max_members', e.target.value)}
             />
           </div>
+          {myActiveGroup && (
+            <p className="muted small">
+              คุณอยู่ในกลุ่ม “{myActiveGroup.name}” อยู่แล้ว — 1 คนอยู่ได้เพียง 1 กลุ่ม
+              (ออกจากกลุ่มเดิมหรือยกเลิกกลุ่มก่อนจึงจะสร้างกลุ่มใหม่ได้)
+            </p>
+          )}
           <div className="form-actions">
-            <button className="btn btn-primary" disabled={saving}>
+            <button className="btn btn-primary" disabled={saving || Boolean(myActiveGroup)}>
               {saving ? 'กำลังสร้าง...' : 'สร้างกลุ่ม'}
             </button>
             <button type="button" className="btn btn-ghost" onClick={() => setShowForm(false)}>
@@ -273,6 +292,8 @@ export default function GroupRidesPage() {
             const meta = GROUP_STATUSES[g.status] || { label: g.status, cls: 'badge-muted' }
             const isLeader = g.created_by === userId
             const isJoined = joined.has(g.id)
+            // กติกา 1 คน / 1 กลุ่ม — ถ้าอยู่กลุ่มอื่นที่ยัง active อยู่ จะเข้าร่วมกลุ่มนี้ไม่ได้
+            const blockedGroup = isJoined || isLeader ? null : myActiveGroup
             const isExpanded = expanded[g.id]
             const isEditing = editingId === g.id
             const fillRatio = g.max_members ? Math.min(100, Math.round((g.current_members / g.max_members) * 100)) : 0
@@ -285,7 +306,10 @@ export default function GroupRidesPage() {
                 )}
                 <div className="group-card-head">
                   <h3>{g.name}</h3>
-                  <span className={`badge ${meta.cls}`}>{meta.label}</span>
+                  <div className="group-card-tags">
+                    {(isJoined || isLeader) && <span className="badge badge-joined">เข้าร่วมแล้ว</span>}
+                    <span className={`badge ${meta.cls}`}>{meta.label}</span>
+                  </div>
                 </div>
                 <div className="group-meta group-meta-block">
                   <span><em>หัวหน้ากลุ่ม</em> <strong>{getUserName(g.created_by)}</strong></span>
@@ -331,10 +355,15 @@ export default function GroupRidesPage() {
                       ออกจากกลุ่ม
                     </button>
                   )}
-                  {!isLeader && !isJoined && g.status === 'open' && (
+                  {!isLeader && !isJoined && g.status === 'open' && !blockedGroup && (
                     <button className="btn btn-sm btn-primary" onClick={() => handleJoin(g.id)}>
                       เข้าร่วม
                     </button>
+                  )}
+                  {!isLeader && !isJoined && g.status === 'open' && blockedGroup && (
+                    <span className="muted small limit-hint" title="กติกา 1 คนเข้าร่วมได้เพียง 1 กลุ่ม">
+                      อยู่ในกลุ่ม “{blockedGroup.name}” แล้ว — เข้าร่วมได้แค่ 1 กลุ่ม
+                    </span>
                   )}
                   {!isLeader && !isJoined && g.status === 'full' && (
                     <span className="muted small">เต็มแล้ว</span>
@@ -410,12 +439,11 @@ function GroupEditForm({ group, onSave, onClose }) {
         />
       </div>
       <div className="field">
-        <label>เวลานัดหมาย</label>
-        <input
-          type="datetime-local"
-          value={form.meetup_time}
-          onChange={(e) => setForm({ ...form, meetup_time: e.target.value })}
+        <label>เวลานัดหมาย (รูปแบบ 24 ชั่วโมง)</label>
+        <DateTime24
           required
+          value={form.meetup_time}
+          onChange={(v) => setForm({ ...form, meetup_time: v })}
         />
       </div>
       <div className="field">

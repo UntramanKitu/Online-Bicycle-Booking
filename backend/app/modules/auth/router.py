@@ -1,16 +1,18 @@
 import os
+import re
 import secrets
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode, urlsplit
 
 import httpx
 import jwt
-from fastapi import APIRouter, Cookie, HTTPException, Request, Response
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
-from app.database import SessionLocal
+from app.database import SessionLocal, get_db
 from app.models.unified_user import UnifiedUser
+from app.modules.auth.roles import resolve_role
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 OAUTH_STATE_COOKIE = "bikea_oauth_state"
@@ -22,12 +24,27 @@ def config(name: str) -> str:
 
 
 def user_provisioning_enabled() -> bool:
-    """ตาราง unified_user เป็นของฝั่ง Django Monolith — ฝั่งนี้อ่านอย่างเดียวเป็นค่าเริ่มต้น
+    """ตาราง accounts_unifieduser เป็นของฝั่ง Django Monolith — ฝั่งนี้อ่านอย่างเดียวเป็นค่าเริ่มต้น
 
     ถ้าเปิด true จะ INSERT user ใหม่ลงตาราง (ใช้ตอน demo ที่ยังไม่มี Django)
     แต่เสี่ยงชนกับฝั่ง Django เมื่อระบบรวมกันแล้ว
     """
     return config("AUTH_USER_PROVISIONING").lower() in {"1", "true", "yes", "on"}
+
+
+def _unique_username(db, email: str) -> str:
+    """สร้าง username ที่ไม่ซ้ำจากอีเมล (username เป็น UNIQUE ใน AbstractUser)
+
+    ใช้ส่วนก่อน @ เป็นฐาน แล้วต่อเลขท้ายถ้าซ้ำ
+    """
+    base = re.sub(r"[^a-z0-9._-]+", "_", email.split("@")[0].lower()).strip("_") or "user"
+    base = base[:140]
+    candidate = base
+    suffix = 1
+    while db.query(UnifiedUser).filter(UnifiedUser.username == candidate).first() is not None:
+        suffix += 1
+        candidate = f"{base}{suffix}"
+    return candidate
 
 
 def frontend_url(path: str = "") -> str:
@@ -98,21 +115,30 @@ async def google_callback(
 
     db = SessionLocal()
     try:
-        user = db.query(UnifiedUser).filter(UnifiedUser.google_sub == profile["sub"]).first()
-        if user is None:
-            user = db.query(UnifiedUser).filter(UnifiedUser.email == profile.get("email")).first()
+        email = (profile.get("email") or "").strip()
+        if not email:
+            # สโคปขอลอง scope "email" อยู่แล้ว — ถ้าไม่มีคือยิงกับ Google ผิดหรือผู้ใช้ปฏิเสธ
+            raise HTTPException(status_code=400, detail="บัญชี Google ไม่ได้ให้อีเมล")
+
+        # ตารางนี้เป็นของ Django (AbstractUser) จึงไม่มีคอลัมน์ google_sub
+        # จึงจับคู่ด้วย email ซึ่งเป็นคอลัมน์ที่สองฝั่งมีตรงกัน
+        user = db.query(UnifiedUser).filter(UnifiedUser.email == email).first()
         if user is None and user_provisioning_enabled():
             user = UnifiedUser(
-                google_sub=profile["sub"],
-                email=profile.get("email"),
-                display_name=profile.get("name"),
-                avatar_url=profile.get("picture"),
+                username=_unique_username(db, email),
+                email=email,
+                first_name=(profile.get("name") or ""),
+                last_name="",
+                password="",  # รหัสผ่านว่าง = บัญชี OAuth ล็อกอินด้วยรหัสผ่านไม่ได้
+                is_active=True,
+                is_staff=False,
+                is_superuser=False,
             )
             db.add(user)
             db.commit()
             db.refresh(user)
         if user is None:
-            # บัญชียังไม่มีใน unified_user — ปล่อยให้ Django เป็นเจ้าของการสมัครสมาชิก
+            # บัญชียังไม่มี — ปล่อยให้ฝั่ง Django เป็นเจ้าของการสมัครสมาชิก
             response = RedirectResponse(f"{frontend_url('/login')}?error=user_not_registered")
             response.delete_cookie(OAUTH_STATE_COOKIE)
             return response
@@ -131,14 +157,34 @@ async def google_callback(
 
 
 @router.get("/me")
-def current_user(access_token: str | None = Cookie(default=None, alias=ACCESS_TOKEN_COOKIE)):
+def current_user(
+    access_token: str | None = Cookie(default=None, alias=ACCESS_TOKEN_COOKIE),
+    db: Session = Depends(get_db),
+):
     if not access_token:
         return {"authenticated": False, "user": None}
     try:
         payload = jwt.decode(access_token, config("JWT_SECRET") or "development-only-secret", algorithms=["HS256"])
     except jwt.PyJWTError:
         return {"authenticated": False, "user": None}
-    return {"authenticated": True, "user": {"id": int(payload["sub"]), "email": payload.get("email")}}
+    try:
+        user_id = int(payload["sub"])
+    except (KeyError, TypeError, ValueError):
+        return {"authenticated": False, "user": None}
+    user = db.get(UnifiedUser, user_id)
+    if user is None or not user.is_active:
+        return {"authenticated": False, "user": None}
+    full_name = f"{user.first_name or ''} {user.last_name or ''}".strip() or user.username
+    return {"authenticated": True, "user": {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "full_name": full_name,
+        "role": resolve_role(user),
+        "status": "active" if user.is_active else "inactive",
+    }}
 
 
 @router.post("/logout")

@@ -1,0 +1,40 @@
+/* ---------- รายการโปรด (mock) ---------- */
+.fav-filter {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 15px; color: var(--text-muted); cursor: pointer;
+  margin-top: 6px;
+}
+.fav-btn {
+  position: absolute; top: 8px; right: 8px; z-index: 1;
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.5); background: rgba(255,255,255,.85);
+  font-size: 20px; line-height: 1; cursor: pointer; color: var(--text-muted);
+  transition: transform .12s ease, color .12s ease;
+}
+.fav-btn:hover { transform: scale(1.1); }
+.fav-btn.on { color: var(--danger); }
+
+/* ---------- ระบบคะแนนและบทลงโทษ (mock) ---------- */
+.status-pill.warn { background: rgba(232,161,0,.18); color: #9a6d00; }
+.score-hero {
+  display: flex; flex-wrap: wrap; gap: 18px; align-items: center; justify-content: space-between;
+  padding: 22px 24px; margin-bottom: 20px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+}
+.score-main { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.score-number { font-size: 44px; font-weight: 800; color: var(--color-deep-teal); line-height: 1; }
+.score-unit { font-size: 14px; color: var(--text-muted); }
+.score-side p { margin: 0 0 6px; font-size: 14px; }
+.score-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.score-events { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.score-events li {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px;
+}
+.score-delta {
+  min-width: 52px; text-align: center; font-weight: 700; font-size: 14px;
+  padding: 4px 6px; border-radius: 8px;
+}
+.score-delta.plus { background: rgba(139,187,146,.25); color: var(--color-deep-teal); }
+.score-delta.minus { background: rgba(214,73,53,.12); color: var(--danger); }
+.score-reason { flex: 1; display: grid; gap: 2px; font-size: 13.5px; }
