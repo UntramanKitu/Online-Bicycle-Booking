@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api, getApiError } from '../../../api'
 import { formatDateTime, toIso } from '../../../utils'
-import { useCurrentUser } from '../../../context/CurrentUserContext'
+import { useCurrentUser } from '../../../context/currentUser'
 
 function BikeIcon() {
   return <svg className="bike-illustration" width="64" height="40" viewBox="0 0 64 40" fill="none" aria-hidden="true">
@@ -138,5 +138,5 @@ export default function BookingsPage() {
 }
 
 function SuccessView({ bike, onBack }) {
-  return <div className="success-view"><div className="success-icon">✓</div><h1>จองสำเร็จ</h1><p>ไปที่ {bike.station} แล้วสแกนรหัสด้านล่างที่ตัวล็อกจักรยานเพื่อปลดล็อก {bike.model} ({bike.id})</p><div className="qr-box" /><div className="booking-code">{bike.code}</div><button className="btn btn-primary" onClick={onBack}>กลับไปหน้าเลือกจักรยาน</button></div>
+  return <div className="success-view"><div className="success-icon">✓</div><h1>จองสำเร็จ</h1><p>ไปที่ {bike.station} แล้วยื่นบัตรประชาชนหรือบัตรนักศึกษาเพื่อเข้าใช้งานจักรยาน {bike.model} {bike.id}</p><div className="qr-box" /><div className="booking-code">{bike.code}</div><button className="btn btn-primary" onClick={onBack}>กลับไปหน้าเลือกจักรยาน</button></div>
 }

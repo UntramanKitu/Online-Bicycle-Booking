@@ -1,6 +1,7 @@
+import os
 import sys
 
-from fastapi import Depends, FastAPI
+from fastapi import FastAPI
 from sqlalchemy import text
 
 # กัน App crash ตอน print ภาษาไทย/emoji ใน console/pipe ที่ encoding ไม่ใช่ UTF-8 (เช่น Windows cp874)
@@ -33,22 +34,30 @@ app.include_router(bicycle.router, prefix="/api", tags=["bicycle"])
 app.include_router(user.router, prefix="/api", tags=["users"])
 app.include_router(auth.router, prefix="/api")
 
-# สร้างตาราง
-Base.metadata.create_all(
-    bind=engine,
-    tables=[
-        ReservationBooking.__table__,
-        SupportTicket.__table__,
-        GroupRide.__table__,
-        GroupRideMember.__table__,
-        Bicycle.__table__,
-        UnifiedUser.__table__,
-    ]
-)
+# สร้างตาราง (ทำซ้ำได้ / idempotent — ใช้ checkfirst ของ SQLAlchemy)
+TABLES = [
+    ReservationBooking.__table__,
+    SupportTicket.__table__,
+    GroupRide.__table__,
+    GroupRideMember.__table__,
+    Bicycle.__table__,
+    UnifiedUser.__table__,
+]
+
+# CORS: รองรับทั้ง localhost และ 127.0.0.1 (เบราว์เซอร์ถือเป็น origin คนละตัว)
+# รวมถึง origin จาก FRONTEND_URL ใน .env ด้วย
+_frontend_origin = os.getenv("FRONTEND_URL", "").strip().rstrip("/") or "http://localhost:5173"
+_cors_origins = {
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:5174",
+    _frontend_origin,
+}
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:5174"],
+    allow_origins=sorted(_cors_origins),
     allow_credentials=True,
     allow_methods=['*'],
     allow_headers=['*'],
@@ -62,18 +71,10 @@ def migrate_unified_user():
 
 @app.on_event("startup")
 def startup():
+    # ต้องสร้างตารางก่อนเสมอ ไม่งั้น migrate_unified_user() จะ ALTER ตารางที่ยังไม่มี
+    # (พังทันทีถ้าเป็น DB ใหม่ที่ยังไม่เคย seed)
+    Base.metadata.create_all(bind=engine, tables=TABLES)
     migrate_unified_user()
     seed_bicycles()
-    Base.metadata.create_all(
-        bind=engine,
-        tables=[
-            ReservationBooking.__table__,
-            SupportTicket.__table__,
-            GroupRide.__table__,
-            GroupRideMember.__table__,
-            Bicycle.__table__,
-            UnifiedUser.__table__,
-        ]
-    )
     seed_main()
 

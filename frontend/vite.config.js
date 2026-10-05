@@ -8,7 +8,8 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:8002',
+        // host ต้องตรงกับ GOOGLE_REDIRECT_URI ใน backend/.env (cookie ผูกกับ host)
+        target: 'http://127.0.0.1:8002',
         changeOrigin: true,
       },
     },

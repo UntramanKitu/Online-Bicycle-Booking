@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { api, getApiError } from '../../../api'
 import { GROUP_STATUSES } from '../../../constants'
 import { formatDateTime, toIso, toLocalInputValue } from '../../../utils'
-import { useCurrentUser } from '../../../context/CurrentUserContext'
+import { useCurrentUser } from '../../../context/currentUser'
 
 const emptyForm = () => ({
   name: '',

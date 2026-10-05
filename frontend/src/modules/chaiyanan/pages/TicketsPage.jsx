@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { api, getApiError } from '../../../api'
 import { TICKET_CATEGORIES, TICKET_PRIORITIES, TICKET_STATUSES } from '../../../constants'
 import { formatDateTime } from '../../../utils'
-import { useCurrentUser } from '../../../context/CurrentUserContext'
+import { useCurrentUser } from '../../../context/currentUser'
 
 const emptyForm = () => ({
   subject: '',

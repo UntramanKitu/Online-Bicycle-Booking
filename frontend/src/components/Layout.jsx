@@ -1,6 +1,6 @@
 ﻿import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { useCurrentUser } from '../context/CurrentUserContext'
+import { useCurrentUser } from '../context/currentUser'
 import { api } from '../api'
 
 const navItems = [
