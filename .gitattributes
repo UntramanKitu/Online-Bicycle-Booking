@@ -1,0 +1,17 @@
+# บังคับ line ending ให้เหมือนกันทุก platform
+# (ตอนนี้ core.autocrlf=true บน Windows ทำให้เกิด warning ตอน commit)
+* text=auto eol=lf
+
+# ไฟล์ binary ห้ามแตะ line ending
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.puml text eol=lf
+*.md text eol=lf
+
+# ไฟล์ที่ระบบสร้างเอง
+package-lock.json -diff
+uv.lock -diff
