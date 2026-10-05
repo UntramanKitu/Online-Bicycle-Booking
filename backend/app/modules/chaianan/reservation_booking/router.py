@@ -8,7 +8,7 @@ from app.crud.booking import (
     BookingStateError,
     get_booking, get_bookings, get_bookings_by_user, get_bookings_by_bicycle,
     get_bookings_by_status, get_bookings_in_date_range,
-    create_booking, update_booking, delete_booking,
+    create_booking, update_booking, delete_booking, clear_booking_history,
     change_booking_state,
 )
 from app.schemas.booking import (
@@ -69,6 +69,21 @@ def update_existing_booking(booking_id: int, booking: ReservationBookingUpdate, 
     return db_booking
 
 
+@router.delete("/bookings/history")
+def clear_history(
+    user_id: int = Query(..., description="ID ผู้ใช้เจ้าของประวัติ"),
+    db: Session = Depends(get_db),
+):
+    """Delete (ล้างประวัติ) – ลบรายการจองที่จบไปแล้วของผู้ใช้คนนี้
+
+    ลบเฉพาะ completed / cancelled / no_show
+    รายการที่ยัง active อยู่จะไม่ถูกลบ
+    """
+    removed = clear_booking_history(db, user_id)
+    return {"removed": removed}
+
+
+# ประกาศหลัง /bookings/history เสมอ ไม่งั้น "history" จะถูก match ไปหา {booking_id} ก่อน
 @router.delete("/bookings/{booking_id}", status_code=204)
 def delete_existing_booking(booking_id: int, db: Session = Depends(get_db)):
     deleted = delete_booking(db, booking_id)

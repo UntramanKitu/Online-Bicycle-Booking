@@ -21,6 +21,7 @@ export default function BookingsPage() {
   const [pickupTime, setPickupTime] = useState('now')
   const [note, setNote] = useState('')
   const [saving, setSaving] = useState(false)
+  const [clearing, setClearing] = useState(false)
   const [message, setMessage] = useState(null)
 
   async function load() {
@@ -51,6 +52,26 @@ export default function BookingsPage() {
       await load()
     } catch (err) {
       setMessage({ type: 'error', text: getApiError(err) })
+    }
+  }
+
+  async function handleClearHistory() {
+    if (!window.confirm('ล้างประวัติการจองที่จบไปแล้วทั้งหมด?\n(รายการที่ยังกำลังใช้งานอยู่จะไม่ถูกลบ)')) return
+    setMessage(null)
+    setClearing(true)
+    try {
+      const res = await api.delete('/bookings/history', { params: { user_id: userId } })
+      setMessage({
+        type: 'success',
+        text: res.data.removed > 0
+          ? `ล้างประวัติแล้ว ${res.data.removed} รายการ`
+          : 'ไม่มีประวัติเก่าให้ล้าง',
+      })
+      await load()
+    } catch (err) {
+      setMessage({ type: 'error', text: getApiError(err) })
+    } finally {
+      setClearing(false)
     }
   }
 
@@ -114,7 +135,20 @@ export default function BookingsPage() {
         </div>
       )}
       <section className="my-bookings">
-        <div className="booking-heading"><h2>การจองของฉัน</h2><p>ติดตามสถานะและจัดการการยืมจักรยาน</p></div>
+        <div className="booking-heading">
+          <div>
+            <h2>การจองของฉัน</h2>
+            <p>ติดตามสถานะและจัดการการยืมจักรยาน</p>
+          </div>
+          <button
+            className="btn btn-sm btn-ghost"
+            onClick={handleClearHistory}
+            disabled={clearing}
+            title="ลบเฉพาะรายการที่จบไปแล้ว (เสร็จ/ยกเลิก/ไม่มา)"
+          >
+            {clearing ? 'กำลังล้าง...' : 'ล้างประวัติ'}
+          </button>
+        </div>
         {myBookings.length === 0 ? <p className="empty">ยังไม่มีการจอง</p> : myBookings.map((booking) => <article className="my-booking" key={booking.id}>
           <div><strong>จักรยาน #{booking.bicycle_id}</strong><span>{formatDateTime(booking.start_time)} - {formatDateTime(booking.end_time)}</span>{booking.note && <span className="booking-note">หมายเหตุ: {booking.note}</span>}</div>
           <span className={`status-pill ${booking.status === 'completed' ? 'free' : 'busy'}`}>{booking.status}</span>

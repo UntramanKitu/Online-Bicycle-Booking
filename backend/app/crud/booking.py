@@ -127,6 +127,30 @@ def delete_booking(db: Session, booking_id: int) -> bool:
     return True
 
 
+# สถานะที่ถือว่า "จบไปแล้ว" — ใช้ตัดสินว่ารายการไหนเป็นประวัติที่ล้างทิ้งได้
+CLOSED_BOOKING_STATUSES = ("completed", "cancelled", "no_show")
+
+
+def clear_booking_history(db: Session, user_id: int) -> int:
+    """ล้างประวัติการจองของผู้ใช้ — ลบเฉพาะรายการที่จบไปแล้วเท่านั้น
+
+    รายการที่ยังใช้งานอยู่ (pending/confirmed/in_progress) จะไม่ถูกลบ
+    เพื่อไม่ให้จักรยานที่กำลังถูกจอง/ยืมหลุดจาก Availability
+    """
+    db_bookings = (
+        db.query(ReservationBooking)
+        .filter(
+            ReservationBooking.user_id == user_id,
+            ReservationBooking.status.in_(CLOSED_BOOKING_STATUSES),
+        )
+        .all()
+    )
+    for db_booking in db_bookings:
+        db.delete(db_booking)
+    db.commit()
+    return len(db_bookings)
+
+
 # ==================== SupportTicket CRUD ====================
 
 def get_ticket(db: Session, ticket_id: int) -> Optional[SupportTicket]:
