@@ -1,9 +1,9 @@
 ﻿import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { CurrentUserProvider } from './context/CurrentUserContext'
 import Layout from './components/Layout'
-import BookingsPage from './modules/chaiyanan/pages/BookingsPage'
-import GroupRidesPage from './modules/chaiyanan/pages/GroupRidesPage'
-import TicketsPage from './modules/chaiyanan/pages/TicketsPage'
+import BookingsPage from './modules/chaianan/pages/BookingsPage'
+import GroupRidesPage from './modules/chaianan/pages/GroupRidesPage'
+import TicketsPage from './modules/chaianan/pages/TicketsPage'
 import LoginPage from './modules/auth/LoginPage'
 
 export default function App() {
