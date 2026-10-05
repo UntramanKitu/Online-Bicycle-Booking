@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title %}ลงทะเบียนบัญชีใหม่ - Portal{% endblock %}
+
+{% block content %}
+<div class="min-h-[80vh] flex items-center justify-center py-10">
+    <div class="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div class="bg-blue-600 px-8 py-6 text-white text-center">
+            <h2 class="text-3xl font-bold mb-2">ลงทะเบียน</h2>
+            <p class="text-blue-100">สร้างบัญชีผู้ใช้ใหม่ในระบบ</p>
+        </div>
+        <div class="p-8">
+            <form method="post" action="{% url 'accounts:register' %}" class="space-y-4">
+                {% csrf_token %}
+                
+                {% if form.errors %}
+                <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+                    <p class="text-sm text-red-700">มีข้อผิดพลาดบางอย่าง โปรดตรวจสอบข้อมูลอีกครั้ง</p>
+                    <ul class="list-disc pl-5 mt-2 text-xs text-red-600">
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {% for field in form %}
+                <div>
+                    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                    <p class="text-xs text-gray-500 mt-1">{{ field.help_text }}</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                <div class="pt-2">
+                    <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                        สร้างบัญชีผู้ใช้
+                    </button>
+                </div>
+            </form>
+            
+            <div class="mt-6 text-center">
+                <p class="text-sm text-gray-600">
+                    มีบัญชีอยู่แล้ว? 
+                    <a href="{% url 'accounts:login' %}" class="font-medium text-blue-600 hover:text-blue-500 transition-colors">เข้าสู่ระบบที่นี่</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

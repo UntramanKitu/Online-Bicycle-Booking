@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block title %}ปฏิเสธคำขอสิทธิ์ - Portal{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto py-12">
+    <div class="bg-white rounded-xl shadow-md overflow-hidden text-center p-8">
+        <svg class="mx-auto h-16 w-16 text-red-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">ปฏิเสธคำขอสิทธิ์เจ้าหน้าที่</h2>
+        <p class="text-gray-500 mb-6">คุณแน่ใจหรือไม่ว่าต้องการปฏิเสธคำขอสิทธิ์ของ <strong>{{ staff_profile.user.first_name }} {{ staff_profile.user.last_name }} ({{ staff_profile.user.username }})</strong>? ผู้ใช้จะยังคงสถานะเป็น "ผู้ใช้ทั่วไป"</p>
+        
+        <form method="POST" class="flex justify-center gap-4">
+            {% csrf_token %}
+            <a href="{% url 'staff:staff_list' %}" class="bg-gray-200 text-gray-800 px-6 py-2 rounded-md hover:bg-gray-300 transition font-medium">ยกเลิก</a>
+            <button type="submit" class="bg-red-600 text-white px-6 py-2 rounded-md hover:bg-red-700 transition font-medium">ยืนยันการปฏิเสธ</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

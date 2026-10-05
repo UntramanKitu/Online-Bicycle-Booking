@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-900">{{ title }}</h1>
+        <a href="{% url 'announcements:manage_list' %}" class="text-indigo-600 hover:text-indigo-900">ยกเลิก</a>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+        <form method="POST" enctype="multipart/form-data" class="space-y-6">
+            {% csrf_token %}
+            
+            {% if form.errors %}
+            <div class="bg-red-50 text-red-700 p-4 rounded-md mb-6">
+                โปรดแก้ไขข้อผิดพลาดด้านล่าง
+                {{ form.errors }}
+            </div>
+            {% endif %}
+            
+            {% for field in form %}
+            <div>
+                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}
+                <p class="mt-1 text-sm text-gray-500">{{ field.help_text }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <div class="flex items-center gap-4 mt-8 pt-6 border-t border-gray-200 flex-wrap">
+                <button type="submit" name="action" value="DRAFT" class="bg-gray-200 text-gray-800 px-6 py-2 rounded-md hover:bg-gray-300 transition">บันทึกเป็นแบบร่าง</button>
+                <button type="submit" name="action" value="SCHEDULE" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition">ตั้งเวลาเผยแพร่</button>
+                <button type="submit" name="action" value="PUBLISH" class="bg-indigo-600 text-white px-6 py-2 rounded-md hover:bg-indigo-700 transition">เผยแพร่ทันที</button>
+                
+                {% if announcement and announcement.status != 'ARCHIVED' %}
+                <button type="submit" name="action" value="ARCHIVE" class="ml-auto bg-yellow-500 text-white px-6 py-2 rounded-md hover:bg-yellow-600 transition">เก็บถาวร</button>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+# สภาพแวดล้อมจำลอง (Virtual Environment)
+.venv/
+env/
+
+# ไฟล์เก็บรหัสผ่านและค่าติดตั้งส่วนตัว (สำคัญมาก!)
+.env
+
+# ฐานข้อมูลสำหรับใช้งานตอนพัฒนา
+db.sqlite3
+
+# ไฟล์ที่ผู้ใช้อัพโหลดเข้ามา (เช่น รูปภาพ)
+media/
+
+# ไฟล์แคชและไฟล์ระบบของ Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ไฟล์ระบบปฏิบัติการ
+.DS_Store
+Thumbs.db
