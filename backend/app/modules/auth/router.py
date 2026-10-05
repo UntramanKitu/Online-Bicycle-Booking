@@ -21,6 +21,15 @@ def config(name: str) -> str:
     return os.getenv(name, "").strip()
 
 
+def user_provisioning_enabled() -> bool:
+    """ตาราง unified_user เป็นของฝั่ง Django Monolith — ฝั่งนี้อ่านอย่างเดียวเป็นค่าเริ่มต้น
+
+    ถ้าเปิด true จะ INSERT user ใหม่ลงตาราง (ใช้ตอน demo ที่ยังไม่มี Django)
+    แต่เสี่ยงชนกับฝั่ง Django เมื่อระบบรวมกันแล้ว
+    """
+    return config("AUTH_USER_PROVISIONING").lower() in {"1", "true", "yes", "on"}
+
+
 def frontend_url(path: str = "") -> str:
     return f"{config('FRONTEND_URL') or 'http://localhost:5173'}{path}"
 
@@ -92,15 +101,21 @@ async def google_callback(
         user = db.query(UnifiedUser).filter(UnifiedUser.google_sub == profile["sub"]).first()
         if user is None:
             user = db.query(UnifiedUser).filter(UnifiedUser.email == profile.get("email")).first()
-        if user is None:
-            user = UnifiedUser()
+        if user is None and user_provisioning_enabled():
+            user = UnifiedUser(
+                google_sub=profile["sub"],
+                email=profile.get("email"),
+                display_name=profile.get("name"),
+                avatar_url=profile.get("picture"),
+            )
             db.add(user)
-        user.google_sub = profile["sub"]
-        user.email = profile.get("email")
-        user.display_name = profile.get("name")
-        user.avatar_url = profile.get("picture")
-        db.commit()
-        db.refresh(user)
+            db.commit()
+            db.refresh(user)
+        if user is None:
+            # บัญชียังไม่มีใน unified_user — ปล่อยให้ Django เป็นเจ้าของการสมัครสมาชิก
+            response = RedirectResponse(f"{frontend_url('/login')}?error=user_not_registered")
+            response.delete_cookie(OAUTH_STATE_COOKIE)
+            return response
         session = jwt.encode({
             "sub": str(user.id),
             "email": user.email,

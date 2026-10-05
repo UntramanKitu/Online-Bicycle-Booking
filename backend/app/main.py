@@ -45,7 +45,8 @@ TABLES = [
 ]
 
 # CORS: รองรับทั้ง localhost และ 127.0.0.1 (เบราว์เซอร์ถือเป็น origin คนละตัว)
-# รวมถึง origin จาก FRONTEND_URL ใน .env ด้วย
+# รวมถึง origin จาก FRONTEND_URL และ CORS_ORIGINS (คั่นด้วย comma) ใน .env
+# ต้องเพิ่ม origin ของ client-server ที่พัฒนาแยกอีกฝั่ง ไม่งั้น browser จะบล็อก CORS
 _frontend_origin = os.getenv("FRONTEND_URL", "").strip().rstrip("/") or "http://localhost:5173"
 _cors_origins = {
     "http://localhost:5173",
@@ -54,6 +55,10 @@ _cors_origins = {
     "http://127.0.0.1:5174",
     _frontend_origin,
 }
+for _origin in os.getenv("CORS_ORIGINS", "").split(","):
+    _origin = _origin.strip().rstrip("/")
+    if _origin:
+        _cors_origins.add(_origin)
 
 app.add_middleware(
     CORSMiddleware,

@@ -27,9 +27,14 @@ docker compose down -v       # ปิด + ลบ volume ข้อมูลท�
 ```bash
 cd backend
 uv sync
-copy .env.example .env       # Windows (macOS/Linux: cp .env.example .env)
+cp .env.example .env        # macOS/Linux
+copy .env.example .env      # Windows — ระวัง: คำสั่งนี้ทับไฟล์ .env เดิม
 uv run uvicorn app.main:app --reload --port 8002
 ```
+
+> ⚠️ **อย่ารัน `copy .env.example .env` ถ้ามี `.env` อยู่แล้ว** — คำสั่งนี้จะทับทั้งไฟล์
+> ทำเฉพาะครั้งแรก หลังจากนั้นแก้ค่าใน `.env` เดิมไปเลย
+> (Windows: `copy /Y` ทับเสมอ | PowerShell: `Copy-Item .env -WhatIf` ดูก่อน)
 
 - API: http://127.0.0.1:8002
 - ต้องใช้ `127.0.0.1` ให้ตรงกับ `GOOGLE_REDIRECT_URI` ใน `.env` เพราะ OAuth cookie ผูกกับ host
