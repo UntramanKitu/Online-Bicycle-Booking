@@ -25,23 +25,6 @@ class ReservationBooking(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
 
-class UsageHistoryLog(Base):
-    __tablename__ = "usage_history_log"
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, nullable=False)
-    bicycle_id = Column(Integer, nullable=False)
-    booking_id = Column(Integer, nullable=False)
-    start_time = Column(DateTime(timezone=True), nullable=False)
-    end_time = Column(DateTime(timezone=True), nullable=True)
-    duration_minutes = Column(Integer, nullable=True)
-    distance_km = Column(Numeric(10, 2), nullable=True)
-    starting_station = Column(String(255), nullable=True)
-    ending_station = Column(String(255), nullable=True)
-    status = Column(String(50), nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-
-
 class SupportTicket(Base):
     __tablename__ = "support_ticket"
 

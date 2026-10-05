@@ -43,45 +43,6 @@ class ReservationBookingResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-# ==================== UsageHistoryLog ====================
-class UsageHistoryLogCreate(BaseModel):
-    user_id: int
-    bicycle_id: int
-    booking_id: int
-    start_time: datetime
-    end_time: Optional[datetime] = None
-    duration_minutes: Optional[int] = None
-    distance_km: Optional[float] = None
-    starting_station: Optional[str] = None
-    ending_station: Optional[str] = None
-    status: Optional[str] = None
-
-
-class UsageHistoryLogUpdate(BaseModel):
-    end_time: Optional[datetime] = None
-    duration_minutes: Optional[int] = None
-    distance_km: Optional[float] = None
-    ending_station: Optional[str] = None
-    status: Optional[str] = None
-
-
-class UsageHistoryLogResponse(BaseModel):
-    id: int
-    user_id: int
-    bicycle_id: int
-    booking_id: int
-    start_time: datetime
-    end_time: Optional[datetime] = None
-    duration_minutes: Optional[int] = None
-    distance_km: Optional[float] = None
-    starting_station: Optional[str] = None
-    ending_station: Optional[str] = None
-    status: Optional[str] = None
-    created_at: datetime
-
-    model_config = {"from_attributes": True}
-
-
 # ==================== SupportTicket ====================
 class SupportTicketCreate(BaseModel):
     user_id: int

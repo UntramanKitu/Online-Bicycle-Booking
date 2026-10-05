@@ -2,10 +2,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from typing import List, Optional
 from datetime import datetime
-from app.models.booking import ReservationBooking, UsageHistoryLog, SupportTicket
+from app.models.booking import ReservationBooking, SupportTicket
 from app.schemas.booking import (
     ReservationBookingCreate, ReservationBookingUpdate,
-    UsageHistoryLogCreate, UsageHistoryLogUpdate,
     SupportTicketCreate, SupportTicketUpdate
 )
 
@@ -123,68 +122,6 @@ def delete_booking(db: Session, booking_id: int) -> bool:
     if db_booking is None:
         return False
     db.delete(db_booking)
-    db.commit()
-    return True
-
-
-# ==================== UsageHistoryLog CRUD ====================
-
-def get_usage_history(db: Session, history_id: int) -> Optional[UsageHistoryLog]:
-    return db.query(UsageHistoryLog).filter(UsageHistoryLog.id == history_id).first()
-
-
-def get_usage_histories(db: Session, skip: int = 0, limit: int = 100) -> List[UsageHistoryLog]:
-    return db.query(UsageHistoryLog).offset(skip).limit(limit).all()
-
-
-def get_usage_histories_by_user(db: Session, user_id: int, skip: int = 0, limit: int = 100) -> List[UsageHistoryLog]:
-    return db.query(UsageHistoryLog).filter(UsageHistoryLog.user_id == user_id).offset(skip).limit(limit).all()
-
-
-def get_usage_histories_by_bicycle(db: Session, bicycle_id: int, skip: int = 0, limit: int = 100) -> List[UsageHistoryLog]:
-    return db.query(UsageHistoryLog).filter(UsageHistoryLog.bicycle_id == bicycle_id).offset(skip).limit(limit).all()
-
-
-def get_usage_histories_by_booking(db: Session, booking_id: int) -> Optional[UsageHistoryLog]:
-    return db.query(UsageHistoryLog).filter(UsageHistoryLog.booking_id == booking_id).first()
-
-
-def create_usage_history(db: Session, history: UsageHistoryLogCreate) -> UsageHistoryLog:
-    db_history = UsageHistoryLog(
-        user_id=history.user_id,
-        bicycle_id=history.bicycle_id,
-        booking_id=history.booking_id,
-        start_time=history.start_time,
-        end_time=history.end_time,
-        duration_minutes=history.duration_minutes,
-        distance_km=history.distance_km,
-        starting_station=history.starting_station,
-        ending_station=history.ending_station,
-        status=history.status,
-    )
-    db.add(db_history)
-    db.commit()
-    db.refresh(db_history)
-    return db_history
-
-
-def update_usage_history(db: Session, history_id: int, history: UsageHistoryLogUpdate) -> Optional[UsageHistoryLog]:
-    db_history = get_usage_history(db, history_id)
-    if db_history is None:
-        return None
-    update_data = history.model_dump(exclude_unset=True)
-    for key, value in update_data.items():
-        setattr(db_history, key, value)
-    db.commit()
-    db.refresh(db_history)
-    return db_history
-
-
-def delete_usage_history(db: Session, history_id: int) -> bool:
-    db_history = get_usage_history(db, history_id)
-    if db_history is None:
-        return False
-    db.delete(db_history)
     db.commit()
     return True
 

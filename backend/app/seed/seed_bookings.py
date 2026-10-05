@@ -1,7 +1,6 @@
 """
 Mock Data Seeder สำหรับตารางของนายชัยอนันต์
 - reservation_booking
-- usage_history_log
 - support_ticket
 - group_ride + group_ride_member (ตารางกลุ่มปั่นร่วมกัน)
 """
@@ -17,11 +16,11 @@ if hasattr(sys.stderr, "reconfigure"):
 from datetime import datetime, timedelta
 from app.database import SessionLocal
 from app.crud.booking import (
-    create_booking, create_usage_history, create_ticket,
+    create_booking, create_ticket,
 )
 from app.modules.chaianan.group_ride_bookings.crud import create_group_ride, join_group_ride
 from app.schemas.booking import (
-    ReservationBookingCreate, UsageHistoryLogCreate, SupportTicketCreate,
+    ReservationBookingCreate, SupportTicketCreate,
 )
 from app.schemas.group_ride import GroupRideCreate
 
@@ -80,53 +79,6 @@ def seed_bookings(db):
         booking = create_booking(db, data)
         created.append(booking)
         print(f"  ✅ Created booking id={booking.id} (user={data.user_id}, bicycle={data.bicycle_id})")
-    return created
-
-
-def seed_usage_histories(db, bookings):
-    """สร้าง mock data สำหรับ usage_history_log"""
-    histories_data = [
-        UsageHistoryLogCreate(
-            user_id=1,
-            bicycle_id=1,
-            booking_id=bookings[0].id,
-            start_time=datetime(2026, 7, 25, 8, 5, 0),
-            end_time=datetime(2026, 7, 25, 11, 55, 0),
-            duration_minutes=350,
-            distance_km=5.2,
-            starting_station="อาคารเรียนรวม 1",
-            ending_station="อาคารเรียนรวม 1",
-            status="completed",
-        ),
-        UsageHistoryLogCreate(
-            user_id=1,
-            bicycle_id=2,
-            booking_id=bookings[1].id,
-            start_time=datetime(2026, 7, 25, 13, 10, 0),
-            end_time=datetime(2026, 7, 25, 14, 50, 0),
-            duration_minutes=100,
-            distance_km=2.1,
-            starting_station="หอสมุดกลาง",
-            ending_station="หอสมุดกลาง",
-            status="completed",
-        ),
-        UsageHistoryLogCreate(
-            user_id=2,
-            bicycle_id=1,
-            booking_id=bookings[2].id,
-            start_time=datetime(2026, 7, 26, 9, 5, 0),
-            duration_minutes=None,
-            distance_km=None,
-            starting_station="คณะวิศวกรรมศาสตร์",
-            ending_station=None,
-            status="in_progress",
-        ),
-    ]
-    created = []
-    for data in histories_data:
-        history = create_usage_history(db, data)
-        created.append(history)
-        print(f"  ✅ Created usage_history id={history.id} (booking={data.booking_id})")
     return created
 
 
@@ -229,10 +181,7 @@ def main():
         print("🌱 Seeding data for นายชัยอนันต์...\n")
 
         print("📌 Seeding reservation_booking...")
-        bookings = seed_bookings(db)
-
-        print("\n📌 Seeding usage_history_log...")
-        seed_usage_histories(db, bookings)
+        seed_bookings(db)
 
         print("\n📌 Seeding support_ticket...")
         seed_tickets(db)
