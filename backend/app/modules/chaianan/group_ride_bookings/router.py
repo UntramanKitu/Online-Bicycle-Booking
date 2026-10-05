@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from .crud import (
     GroupRideError,
     cancel_group_ride,
+    clear_cancelled_group_rides,
     create_group_ride,
     get_group_members,
     get_group_ride,
@@ -108,6 +109,16 @@ def leave_existing_group_ride(group_ride_id: int, body: GroupRideJoinRequest, db
         return leave_group_ride(db, group_ride_id, body.user_id)
     except GroupRideError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+# ประกาศก่อน /group-rides/{group_ride_id} เสมอ ไม่งั้น "cancelled" จะถูก match ไปหา id ก่อน
+@router.delete("/group-rides/cancelled")
+def clear_cancelled(
+    db: Session = Depends(get_db),
+):
+    """Delete (ล้างกลุ่มที่ยกเลิก): ลบกลุ่มปั่นสถานะ cancelled ออกทั้งหมด"""
+    removed = clear_cancelled_group_rides(db)
+    return {"removed": removed}
 
 
 @router.delete("/group-rides/{group_ride_id}", response_model=GroupRideResponse)

@@ -241,3 +241,20 @@ def cancel_group_ride(db: Session, group_ride_id: int, user_id: int) -> Optional
     db.commit()
     db.refresh(db_group)
     return db_group
+
+
+def clear_cancelled_group_rides(db: Session) -> int:
+    """ลบกลุ่มปั่นที่ถูกยกเลิกแล้วทั้งหมด (พร้อมรายการสมาชิกของกลุ่มนั้น)
+
+    ลบเฉพาะสถานะ cancelled เท่านั้น กลุ่มที่ยังใช้งานอยู่ (open/full) ไม่ถูกแตะ
+    """
+    db_groups = db.query(GroupRide).filter(GroupRide.status == "cancelled").all()
+    group_ids = [g.id for g in db_groups]
+    if group_ids:
+        # ลบสมาชิกก่อนเสมอ ไม่งั้นจะชน foreign key
+        db.query(GroupRideMember).filter(GroupRideMember.group_ride_id.in_(group_ids)).delete(
+            synchronize_session=False
+        )
+        db.query(GroupRide).filter(GroupRide.id.in_(group_ids)).delete(synchronize_session=False)
+        db.commit()
+    return len(group_ids)

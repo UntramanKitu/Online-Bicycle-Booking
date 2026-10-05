@@ -29,6 +29,7 @@ export default function GroupRidesPage() {
   const [initialLoading, setInitialLoading] = useState(true)
   const [status, setStatus] = useState('')
   const [form, setForm] = useState(emptyForm())
+  const [clearing, setClearing] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState(null)
@@ -111,6 +112,27 @@ export default function GroupRidesPage() {
       setMessage({ type: 'error', text: getApiError(err) })
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function handleClearCancelled() {
+    if (!window.confirm('ลบกลุ่มปั่นที่ยกเลิกแล้วทั้งหมด?\n(กลุ่มที่ยังเปิดอยู่หรือเต็มแล้วจะไม่ถูกลบ)')) return
+    setMessage(null)
+    setClearing(true)
+    try {
+      const res = await api.delete('/group-rides/cancelled')
+      setMessage({
+        type: 'success',
+        text: res.data.removed > 0
+          ? `ลบกลุ่มที่ยกเลิกแล้ว ${res.data.removed} กลุ่ม`
+          : 'ไม่มีกลุ่มที่ยกเลิกแล้วให้ลบ',
+      })
+      await load()
+      await loadJoined()
+    } catch (err) {
+      setMessage({ type: 'error', text: getApiError(err) })
+    } finally {
+      setClearing(false)
     }
   }
 
@@ -218,17 +240,27 @@ export default function GroupRidesPage() {
         </form>
       )}
 
-      <div className="tabs">
-        {tabs.map((t) => (
-          <button
-            key={t.value}
-            className={status === t.value ? 'tab active' : 'tab'}
-            onClick={() => setStatus(t.value)}
-          >
-            {t.label}
-            {t.value === '' ? ` (${totalCount})` : ''}
-          </button>
-        ))}
+      <div className="tabs tabs-with-action">
+        <div className="tabs-list">
+          {tabs.map((t) => (
+            <button
+              key={t.value}
+              className={status === t.value ? 'tab active' : 'tab'}
+              onClick={() => setStatus(t.value)}
+            >
+              {t.label}
+              {t.value === '' ? ` (${totalCount})` : ''}
+            </button>
+          ))}
+        </div>
+        <button
+          className="btn btn-sm btn-ghost"
+          onClick={handleClearCancelled}
+          disabled={clearing}
+          title="ลบกลุ่มที่ยกเลิกแล้วออกทั้งหมด"
+        >
+          {clearing ? 'กำลังล้าง...' : 'ล้างกลุ่มที่ยกเลิก'}
+        </button>
       </div>
 
       {initialLoading ? (
@@ -246,6 +278,11 @@ export default function GroupRidesPage() {
             const fillRatio = g.max_members ? Math.min(100, Math.round((g.current_members / g.max_members) * 100)) : 0
             return (
               <div className={`group-card status-${g.status}`} key={g.id}>
+                {g.status === 'cancelled' && (
+                  <div className="cancelled-banner">
+                    <span className="cancelled-banner-text">ยกเลิกแล้ว</span>
+                  </div>
+                )}
                 <div className="group-card-head">
                   <h3>{g.name}</h3>
                   <span className={`badge ${meta.cls}`}>{meta.label}</span>
