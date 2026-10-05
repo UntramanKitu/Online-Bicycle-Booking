@@ -146,15 +146,37 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); line
 /* ---------- Group cards ---------- */
 .grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
 .group-card {
-  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-  box-shadow: var(--shadow); padding: 18px; display: flex; flex-direction: column; gap: 10px;
+  position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 20px 20px 18px 24px; display: flex; flex-direction: column; gap: 14px;
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
 }
-.group-card-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-.group-card h3 { margin: 0; color: var(--color-dark-teal); font-size: 17px; }
+/* แถบสีซ้ายบอกสถานะกลุ่ม — ทำให้การ์ดเด่นขึ้นโดยไม่ต้องเพิ่มสีทั้งก้อน */
+.group-card::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px;
+  border-radius: var(--radius) 0 0 var(--radius); background: var(--color-deep-teal);
+}
+.group-card.status-full::before { background: #d08c34; }
+.group-card.status-cancelled::before { background: #c96b6b; }
+.group-card.status-completed::before { background: var(--text-muted); }
+.group-card:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(9, 35, 40, .12); border-color: var(--color-deep-teal); }
+.group-card.status-cancelled { opacity: .72; }
+.group-card.status-cancelled:hover { opacity: 1; }
+.group-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.group-card h3 { margin: 0; color: var(--color-dark-teal); font-size: 18px; }
 .group-meta { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--text-muted); }
+/* เรียงข้อมูลเป็นบรรทัดจริงแบบรายการ อ่านง่ายกว่ายัดไปหลายคอลัมน์ */
+.group-meta-block { flex-direction: column; gap: 8px; padding: 12px 14px; border-radius: 10px; background: var(--surface-2); }
+.group-meta-block span { display: flex; justify-content: space-between; gap: 12px; }
+.group-meta-block em { font-style: normal; color: var(--text-muted); }
 .group-meta strong { color: var(--text); }
+/* แถบความคืบหน้าสมาชิก */
+.member-progress { display: flex; flex-direction: column; gap: 6px; }
+.member-progress-head { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--text-muted); }
+.member-progress-track { height: 7px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.member-progress-fill { height: 100%; border-radius: 999px; background: var(--color-deep-teal); transition: width .25s ease; }
+.member-progress-fill.is-full { background: #d08c34; }
 .member-count { font-weight: 700; color: var(--color-deep-teal); }
-.group-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.group-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px; }
 .members-list { border-top: 1px dashed var(--border); padding-top: 10px; font-size: 13px; display: flex; flex-direction: column; gap: 5px; }
 .member-row { display: flex; justify-content: space-between; align-items: center; }
 .role-tag { font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 999px; }
@@ -271,7 +293,7 @@ h1, h2, h3, .brand-text { font-family: 'Kanit', sans-serif; }
 .qr-box { width: 140px; height: 140px; margin: 0 auto 22px; border: 1px solid var(--border); border-radius: 12px; background: repeating-linear-gradient(0deg, var(--text) 0 6px, transparent 6px 12px), repeating-linear-gradient(90deg, var(--text) 0 6px, transparent 6px 12px); background-blend-mode: multiply; background-color: #fff; opacity: .85; }
 .booking-code { margin-bottom: 20px; padding: 14px; border: 1px dashed var(--border); border-radius: 12px; font-family: 'Kanit', sans-serif; font-size: 20px; font-weight: 600; letter-spacing: 1px; }
 .my-bookings { margin-top: 42px; }
-.my-bookings .booking-heading { margin-bottom: 14px; }
+.my-bookings .booking-heading { margin-bottom: 14px; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .my-bookings h2 { margin: 0 0 4px; font-size: 19px; }
 .my-booking { display: flex; align-items: center; gap: 16px; margin-bottom: 10px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
 .my-booking > div:first-child { display: grid; flex: 1; gap: 3px; }

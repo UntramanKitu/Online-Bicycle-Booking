@@ -23,7 +23,10 @@ export default function GroupRidesPage() {
   const { userId } = useCurrentUser()
   const [groups, setGroups] = useState([])
   const [joined, setJoined] = useState(new Set())
-  const [loading, setLoading] = useState(true)
+  const [totalCount, setTotalCount] = useState(0)
+  // แยกสถานะโหลดครั้งแรกออกจากการกดสลับแท็บ
+  // ถ้าใช้ loading เดียว การกดแท็บจะทำให้กริดทั้งหมดถูกแทนด้วย "กำลังโหลด..." ทั้งหน้า
+  const [initialLoading, setInitialLoading] = useState(true)
   const [status, setStatus] = useState('')
   const [form, setForm] = useState(emptyForm())
   const [showForm, setShowForm] = useState(false)
@@ -42,22 +45,28 @@ export default function GroupRidesPage() {
     }
   }
 
-  async function load() {
-    setLoading(true)
+  async function load(isFirstLoad = false) {
+    if (isFirstLoad) setInitialLoading(true)
     try {
-      const params = status ? { status } : {}
-      const res = await api.get('/group-rides', { params })
-      setGroups(res.data)
+      if (status) {
+        const res = await api.get('/group-rides', { params: { status } })
+        setGroups(res.data)
+      } else {
+        const res = await api.get('/group-rides')
+        setGroups(res.data)
+        // นับจำนวนทั้งหมดจากผลลัพธ์ที่ไม่ถูกกรอง เพื่อให้แท็บ "ทั้งหมด" แสดงตัวเลขที่ถูกต้องเสมอ
+        setTotalCount(res.data.length)
+      }
     } catch (err) {
       setMessage({ type: 'error', text: getApiError(err) })
     } finally {
-      setLoading(false)
+      if (isFirstLoad) setInitialLoading(false)
     }
   }
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      load()
+      load(true)
       loadJoined()
     }, 0)
     return () => window.clearTimeout(timer)
@@ -217,12 +226,12 @@ export default function GroupRidesPage() {
             onClick={() => setStatus(t.value)}
           >
             {t.label}
-            {t.value === '' ? ` (${groups.length})` : ''}
+            {t.value === '' ? ` (${totalCount})` : ''}
           </button>
         ))}
       </div>
 
-      {loading ? (
+      {initialLoading ? (
         <p className="empty">กำลังโหลดข้อมูล...</p>
       ) : groups.length === 0 ? (
         <p className="empty">ยังไม่มีกลุ่มปั่นในรายการนี้</p>
@@ -234,22 +243,30 @@ export default function GroupRidesPage() {
             const isJoined = joined.has(g.id)
             const isExpanded = expanded[g.id]
             const isEditing = editingId === g.id
+            const fillRatio = g.max_members ? Math.min(100, Math.round((g.current_members / g.max_members) * 100)) : 0
             return (
-              <div className="group-card" key={g.id}>
+              <div className={`group-card status-${g.status}`} key={g.id}>
                 <div className="group-card-head">
                   <h3>{g.name}</h3>
                   <span className={`badge ${meta.cls}`}>{meta.label}</span>
                 </div>
-                <div className="group-meta">
-                  <span>หัวหน้า <strong>#{g.created_by}</strong></span>
-                  <span>จุดหมาย <strong>{g.destination}</strong></span>
-                  <span>เวลา <strong>{formatDateTime(g.meetup_time)}</strong></span>
+                <div className="group-meta group-meta-block">
+                  <span><em>หัวหน้ากลุ่ม</em> <strong>#{g.created_by}</strong></span>
+                  <span><em>จุดหมาย</em> <strong>{g.destination}</strong></span>
+                  <span><em>เวลานัด</em> <strong>{formatDateTime(g.meetup_time)}</strong></span>
+                  <span><em>สถานที่นัดพบ</em> <strong>{g.meetup_location || '-'}</strong></span>
                 </div>
-                <div className="group-meta">
-                  <span>นัดพบ <strong>{g.meetup_location || '-'}</strong></span>
-                  <span>
-                    สมาชิก <strong className="member-count">{g.current_members}/{g.max_members}</strong>
-                  </span>
+                <div className="member-progress">
+                  <div className="member-progress-head">
+                    <span>สมาชิก</span>
+                    <strong className="member-count">{g.current_members}/{g.max_members}</strong>
+                  </div>
+                  <div className="member-progress-track">
+                    <div
+                      className={`member-progress-fill ${fillRatio >= 100 ? 'is-full' : ''}`}
+                      style={{ width: `${fillRatio}%` }}
+                    />
+                  </div>
                 </div>
                 <div className="group-actions">
                   {isEditing && (
