@@ -24,7 +24,8 @@ export default function TicketsPage() {
   async function load() {
     setLoading(true)
     try {
-      const res = await api.get('/tickets')
+      // ดูเฉพาะคำร้องของผู้ใช้ปัจจุบัน — ไม่เห็นคำร้องของคนอื่น
+      const res = await api.get('/tickets', { params: { user_id: userId } })
       setTickets(res.data)
     } catch (err) {
       setMessage({ type: 'error', text: getApiError(err) })
@@ -36,7 +37,7 @@ export default function TicketsPage() {
   useEffect(() => {
     const timer = window.setTimeout(load, 0)
     return () => window.clearTimeout(timer)
-  }, [])
+  }, [userId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleCreate(e) {
     e.preventDefault()
@@ -61,16 +62,6 @@ export default function TicketsPage() {
     }
   }
 
-  async function handleUpdate(id, payload) {
-    setMessage(null)
-    try {
-      await api.put(`/tickets/${id}`, payload)
-      load()
-    } catch (err) {
-      setMessage({ type: 'error', text: getApiError(err) })
-    }
-  }
-
   async function handleDelete(id) {
     if (!window.confirm('ลบคำร้องนี้หรือไม่?')) return
     setMessage(null)
@@ -91,9 +82,10 @@ export default function TicketsPage() {
     <div className="page-section">
       <div className="section-head">
         <div>
-          <h1 className="section-title">Support Tickets</h1>
+          <h1 className="section-title">แจ้งปัญหา</h1>
           <p className="section-subtitle">
-            ระบบรับแจ้งปัญหาการใช้งาน เช่น แอปค้าง หรือพบปัญหาที่จุดจอด เพื่อให้เจ้าหน้าที่ตรวจสอบและแก้ไข
+            แจ้งปัญหาการใช้งาน เช่น แอปค้าง หรือพบปัญหาที่จุดจอด เพื่อให้เจ้าหน้าที่ตรวจสอบและแก้ไข
+            — คุณจะเห็นเฉพาะคำร้องของตัวเอง
           </p>
         </div>
         <button className="btn btn-primary" onClick={() => setShowForm((v) => !v)}>
@@ -178,7 +170,6 @@ export default function TicketsPage() {
             <thead>
               <tr>
                 <th>#</th>
-                <th>ผู้ใช้</th>
                 <th>หัวข้อ</th>
                 <th>หมวดหมู่</th>
                 <th>เร่งด่วน</th>
@@ -196,23 +187,11 @@ export default function TicketsPage() {
                 return [
                   <tr key={t.id}>
                     <td>{t.id}</td>
-                    <td>#{t.user_id}</td>
                     <td>{t.subject}</td>
                     <td><span className={`badge ${catMeta.cls}`}>{catMeta.label}</span></td>
                     <td><span className={`badge ${priMeta.cls}`}>{priMeta.label}</span></td>
-                    <td>
-                      <span className={`badge ${statMeta.cls}`}>{statMeta.label}</span>
-                      <select
-                        className="mini-select"
-                        value={t.status}
-                        onChange={(e) => handleUpdate(t.id, { status: e.target.value })}
-                        title="เปลี่ยนสถานะ"
-                      >
-                        {Object.entries(TICKET_STATUSES).map(([v, m]) => (
-                          <option key={v} value={v}>{m.label}</option>
-                        ))}
-                      </select>
-                    </td>
+                    {/* สถานะเป็น read-only — การเปลี่ยนสถานะเป็นหน้าที่เจ้าหน้าที่ */}
+                    <td><span className={`badge ${statMeta.cls}`}>{statMeta.label}</span></td>
                     <td className="muted small">{formatDateTime(t.created_at)}</td>
                     <td>
                       <button
@@ -228,11 +207,8 @@ export default function TicketsPage() {
                   </tr>,
                   isActive && (
                     <tr className="detail-row" key={`${t.id}-detail`}>
-                      <td colSpan={8}>
-                        <TicketDetail
-                          ticket={t}
-                          onSave={handleUpdate}
-                        />
+                      <td colSpan={7}>
+                        <TicketDetail ticket={t} />
                       </td>
                     </tr>
                   ),
@@ -246,16 +222,7 @@ export default function TicketsPage() {
   )
 }
 
-function TicketDetail({ ticket, onSave }) {
-  const [notes, setNotes] = useState(ticket.resolution_notes || '')
-  const [saving, setSaving] = useState(false)
-
-  async function save() {
-    setSaving(true)
-    await onSave(ticket.id, { resolution_notes: notes })
-    setSaving(false)
-  }
-
+function TicketDetail({ ticket }) {
   return (
     <div className="ticket-detail">
       <p><strong>รายละเอียด:</strong> {ticket.description}</p>
@@ -265,20 +232,9 @@ function TicketDetail({ ticket, onSave }) {
       {ticket.resolved_at && (
         <p><strong>แก้ไขเสร็จเมื่อ:</strong> {formatDateTime(ticket.resolved_at)}</p>
       )}
-      <div className="field">
-        <label>บันทึกการแก้ไข (Resolution Notes)</label>
-        <textarea
-          rows={2}
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder="หมายเหตุเมื่อจัดการเคสแล้ว..."
-        />
-      </div>
-      <div>
-        <button className="btn btn-sm btn-primary" onClick={save} disabled={saving}>
-          {saving ? 'กำลังบันทึก...' : 'บันทึกบันทึกการแก้ไข'}
-        </button>
-      </div>
+      {ticket.resolution_notes && (
+        <p><strong>ผลการแก้ไข:</strong> {ticket.resolution_notes}</p>
+      )}
     </div>
   )
 }
