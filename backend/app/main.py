@@ -69,12 +69,19 @@ def migrate_unified_user():
         for column in ("google_sub", "email", "display_name", "avatar_url"):
             connection.execute(text(f"ALTER TABLE unified_user ADD COLUMN IF NOT EXISTS {column} VARCHAR(500)"))
 
+
+def migrate_reservation_booking():
+    """เพิ่มคอลัมน์ note ให้ตารางที่มีอยู่ก่อน (create_all ไม่เพิ่มคอลัมน์ให้ตารางเก่า)"""
+    with engine.begin() as connection:
+        connection.execute(text("ALTER TABLE reservation_booking ADD COLUMN IF NOT EXISTS note TEXT"))
+
 @app.on_event("startup")
 def startup():
     # ต้องสร้างตารางก่อนเสมอ ไม่งั้น migrate_unified_user() จะ ALTER ตารางที่ยังไม่มี
     # (พังทันทีถ้าเป็น DB ใหม่ที่ยังไม่เคย seed)
     Base.metadata.create_all(bind=engine, tables=TABLES)
     migrate_unified_user()
+    migrate_reservation_booking()
     seed_bicycles()
     seed_main()
 

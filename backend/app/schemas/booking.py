@@ -12,6 +12,7 @@ class ReservationBookingCreate(BaseModel):
     end_time: datetime
     pickup_location: Optional[str] = None
     return_location: Optional[str] = None
+    note: Optional[str] = None
 
 
 class ReservationBookingUpdate(BaseModel):
@@ -21,6 +22,7 @@ class ReservationBookingUpdate(BaseModel):
     status: Optional[str] = None
     pickup_location: Optional[str] = None
     return_location: Optional[str] = None
+    note: Optional[str] = None
     checked_out_at: Optional[datetime] = None
     checked_in_at: Optional[datetime] = None
 
@@ -35,6 +37,7 @@ class ReservationBookingResponse(BaseModel):
     status: str
     pickup_location: Optional[str] = None
     return_location: Optional[str] = None
+    note: Optional[str] = None
     checked_out_at: Optional[datetime] = None
     checked_in_at: Optional[datetime] = None
     created_at: datetime

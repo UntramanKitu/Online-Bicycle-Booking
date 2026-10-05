@@ -19,6 +19,7 @@ class ReservationBooking(Base):
     ), nullable=False, default="pending")
     pickup_location = Column(String(255), nullable=True)
     return_location = Column(String(255), nullable=True)
+    note = Column(Text, nullable=True)
     checked_out_at = Column(DateTime(timezone=True), nullable=True)
     checked_in_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

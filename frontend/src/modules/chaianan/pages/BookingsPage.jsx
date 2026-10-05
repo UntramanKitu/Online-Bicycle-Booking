@@ -68,7 +68,8 @@ export default function BookingsPage() {
         start_time: toIso(start),
         end_time: toIso(end),
         pickup_location: selectedBike.station,
-        return_location: note || null,
+        return_location: selectedBike.station,
+        note: note || null,
       })
       setSelectedBike({ ...selectedBike, code: `BK-${Math.floor(1000 + Math.random() * 9000)}` })
       load()
@@ -115,7 +116,7 @@ export default function BookingsPage() {
       <section className="my-bookings">
         <div className="booking-heading"><h2>การจองของฉัน</h2><p>ติดตามสถานะและจัดการการยืมจักรยาน</p></div>
         {myBookings.length === 0 ? <p className="empty">ยังไม่มีการจอง</p> : myBookings.map((booking) => <article className="my-booking" key={booking.id}>
-          <div><strong>จักรยาน #{booking.bicycle_id}</strong><span>{formatDateTime(booking.start_time)} - {formatDateTime(booking.end_time)}</span></div>
+          <div><strong>จักรยาน #{booking.bicycle_id}</strong><span>{formatDateTime(booking.start_time)} - {formatDateTime(booking.end_time)}</span>{booking.note && <span className="booking-note">หมายเหตุ: {booking.note}</span>}</div>
           <span className={`status-pill ${booking.status === 'completed' ? 'free' : 'busy'}`}>{booking.status}</span>
           <div className="booking-actions">
             {['pending', 'confirmed'].includes(booking.status) && <><button className="btn btn-primary btn-sm" onClick={() => updateBookingState(booking.id, 'borrow')}>รับรถ</button><button className="btn btn-ghost btn-sm" onClick={() => updateBookingState(booking.id, 'cancel')}>ยกเลิก</button></>}

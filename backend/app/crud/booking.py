@@ -85,6 +85,7 @@ def create_booking(db: Session, booking: ReservationBookingCreate) -> Reservatio
         end_time=booking.end_time,
         pickup_location=booking.pickup_location,
         return_location=booking.return_location,
+        note=booking.note,
     )
     db.add(db_booking)
     db.commit()
