@@ -12,7 +12,8 @@ if hasattr(sys.stderr, "reconfigure"):
 
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import Base, engine
-from app.routers import bicycle, user, favorites, lost_items, penalties
+from app.routers import bicycle, user
+from app.modules.eakapol import favorites, lost_items, penalties
 from app.modules.auth import router as auth
 from app.modules.chaianan.reservation_booking import router as reservation_booking
 from app.modules.chaianan.group_ride_bookings import router as group_ride
