@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { api, getApiError } from '../../../api'
 import { TICKET_CATEGORIES, TICKET_PRIORITIES, TICKET_STATUSES } from '../../../constants'
 import { formatDateTime } from '../../../utils'

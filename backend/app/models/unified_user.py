@@ -10,7 +10,7 @@ model นี้ mirror คอลัมน์ของ Django ทุกตัว�
 
 from datetime import datetime, timezone
 
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, String
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, Integer, String
 
 from app.database import Base
 
@@ -33,6 +33,7 @@ class UnifiedUser(Base):
     date_joined = Column(
         DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc)
     )
+    points = Column(Integer, nullable=False, default=12)
 
     @property
     def full_name(self) -> str:

@@ -184,6 +184,7 @@ def current_user(
         "full_name": full_name,
         "role": resolve_role(user),
         "status": "active" if user.is_active else "inactive",
+        "points": user.points,
     }}
 
 

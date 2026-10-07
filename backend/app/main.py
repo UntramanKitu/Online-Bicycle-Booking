@@ -12,7 +12,7 @@ if hasattr(sys.stderr, "reconfigure"):
 
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import Base, engine
-from app.routers import bicycle, user
+from app.routers import bicycle, user, favorites, lost_items, penalties
 from app.modules.auth import router as auth
 from app.modules.chaianan.reservation_booking import router as reservation_booking
 from app.modules.chaianan.group_ride_bookings import router as group_ride
@@ -25,6 +25,7 @@ from app.models.unified_user import UnifiedUser
 from app.models.booking import ReservationBooking, SupportTicket
 from app.models.group_ride import GroupRide, GroupRideMember
 from app.models.nathida import MaintenanceReport, Notification, Review
+from app.models.eakapol import Favorite, PenaltyStrike, LostItem
 from app.seed.seed_bookings import main as seed_main
 from app.seed.seed_bicycles import main as seed_bicycles
 
@@ -34,6 +35,9 @@ app = FastAPI()
 app.include_router(reservation_booking.router, prefix="/api", tags=["reservation-booking"])
 app.include_router(support_ticket.router, prefix="/api", tags=["support-ticket"])
 app.include_router(group_ride.router, prefix="/api", tags=["group-ride"])
+app.include_router(favorites.router)
+app.include_router(lost_items.router)
+app.include_router(penalties.router)
 app.include_router(bicycle.router, prefix="/api", tags=["bicycle"])
 app.include_router(user.router, prefix="/api", tags=["users"])
 app.include_router(auth.router, prefix="/api")
@@ -52,7 +56,11 @@ TABLES = [
     Notification.__table__,
     MaintenanceReport.__table__,
     Review.__table__,
+    Favorite.__table__,
+    PenaltyStrike.__table__,
+    LostItem.__table__,
 ]
+
 
 # CORS: รองรับทั้ง localhost และ 127.0.0.1 (เบราว์เซอร์ถือเป็น origin คนละตัว)
 # รวมถึง origin จาก FRONTEND_URL และ CORS_ORIGINS (คั่นด้วย comma) ใน .env
@@ -85,6 +93,20 @@ def migrate_reservation_booking():
         connection.execute(text("ALTER TABLE reservation_booking ADD COLUMN IF NOT EXISTS note TEXT"))
 
 
+def migrate_user_points():
+    """เพิ่มคอลัมน์ points ให้ accounts_unifieduser (ตาราง Django เดิมไม่มี)
+
+    ระบบคะแนน/บทลงโทษของเอกพลใช้คอลัมน์นี้ — ทำแบบ idempotent เหมือน migrate อื่น
+    """
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                "ALTER TABLE accounts_unifieduser "
+                "ADD COLUMN IF NOT EXISTS points INTEGER NOT NULL DEFAULT 12"
+            )
+        )
+
+
 def migrate_review_rating():
     """เปลี่ยนคอลัมน์ reviews.rating จาก integer เป็น float (รองรับครึ่งดาว)
 
@@ -109,6 +131,7 @@ def startup():
     # (พังทันทีถ้าเป็น DB ใหม่ที่ยังไม่เคย seed)
     Base.metadata.create_all(bind=engine, tables=TABLES)
     migrate_reservation_booking()
+    migrate_user_points()
     migrate_review_rating()
     seed_bicycles()
     seed_main()

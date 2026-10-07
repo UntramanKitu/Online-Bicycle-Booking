@@ -15,6 +15,7 @@ class UserResponse(BaseModel):
     department: Optional[str] = None
     role: str
     status: str
+    points: Optional[int] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 

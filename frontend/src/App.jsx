@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-route
 import { CurrentUserProvider } from './context/CurrentUserContext'
 import { useCurrentUser } from './context/currentUser'
 import Layout from './components/Layout'
+import HomePage from './pages/HomePage'
 import BookingsPage from './modules/chaianan/pages/BookingsPage'
 import GroupRidesPage from './modules/chaianan/pages/GroupRidesPage'
 import TicketsPage from './modules/chaianan/pages/TicketsPage'
@@ -10,6 +11,8 @@ import MaintenancePage from './modules/nathida/pages/MaintenancePage'
 import ReviewsPage from './modules/nathida/pages/ReviewsPage'
 import LoginPage from './modules/auth/LoginPage'
 import ScoresPage from './modules/akeapon/pages/ScoresPage'
+import FavoritesPage from './modules/akeapon/pages/FavoritesPage'
+import LostItemsPage from './modules/akeapon/pages/LostItemsPage'
 import AdminDashboard from './modules/auth/AdminDashboard'
 
 function RequireAuth({ children }) {
@@ -37,7 +40,8 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/" element={<RequireAuth><Layout /></RequireAuth>}>
-            <Route index element={<BookingsPage />} />
+            <Route index element={<HomePage />} />
+            <Route path="home" element={<HomePage />} />
             <Route path="bookings" element={<BookingsPage />} />
             <Route path="group-rides" element={<GroupRidesPage />} />
             <Route path="support" element={<TicketsPage />} />
@@ -45,6 +49,8 @@ export default function App() {
             <Route path="maintenance" element={<MaintenancePage />} />
             <Route path="reviews" element={<ReviewsPage />} />
             <Route path="scores" element={<ScoresPage />} />
+            <Route path="favorites" element={<FavoritesPage />} />
+            <Route path="lost-items" element={<LostItemsPage />} />
             {/* Admin-only route */}
             <Route
               path="admin"

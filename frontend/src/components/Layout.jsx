@@ -5,12 +5,16 @@ import { formatDateTime } from '../utils'
 import { api } from '../api'
 
 const navItems = [
+  { to: '/', label: '🏠 หน้าหลัก' },
   { to: '/bookings', label: 'การจองจักรยาน' },
   { to: '/group-rides', label: 'กลุ่มปั่นร่วมกัน' },
   { to: '/support', label: 'แจ้งปัญหา' },
   { to: '/maintenance', label: 'แจ้งซ่อม' },
   { to: '/reviews', label: 'รีวิว & คะแนน' },
+  { to: '/notifications', label: 'การแจ้งเตือน' },
   { to: '/scores', label: 'คะแนน & บทลงโทษ' },
+  { to: '/favorites', label: 'รายการโปรด' },
+  { to: '/lost-items', label: 'ของหาย' },
 ]
 
 const adminNavItems = [

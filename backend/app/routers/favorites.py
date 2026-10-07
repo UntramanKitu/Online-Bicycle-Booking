@@ -1,0 +1,80 @@
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from typing import List
+
+from app.database import get_db
+from app.models.eakapol import Favorite
+from app.schemas.eakapol import FavoriteCreate, FavoriteUpdate, FavoriteResponse
+from app.models.unified_user import UnifiedUser
+from app.models.bicycle import Bicycle
+
+router = APIRouter(prefix="/api/favorites", tags=["Favorites"])
+
+
+def resolve_user(user_id: int, db: Session):
+    user = db.get(UnifiedUser, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+
+def resolve_bicycle(bicycle_id: int, db: Session):
+    bike = db.get(Bicycle, bicycle_id)
+    if not bike:
+        raise HTTPException(status_code=404, detail="Bicycle not found")
+    return bike
+
+
+@router.get("", response_model=List[FavoriteResponse])
+def list_favorites(db: Session = Depends(get_db)):
+    return db.query(Favorite).order_by(Favorite.created_at.desc()).all()
+
+
+@router.get("/{favorite_id}", response_model=FavoriteResponse)
+def get_favorite(favorite_id: int, db: Session = Depends(get_db)):
+    record = db.query(Favorite).filter(Favorite.id == favorite_id).first()
+    if not record:
+        raise HTTPException(status_code=404, detail="Favorite not found")
+    return record
+
+
+@router.get("/user/{user_id}", response_model=List[FavoriteResponse])
+def list_user_favorites(user_id: int, db: Session = Depends(get_db)):
+    return db.query(Favorite).filter(
+        Favorite.user_id == user_id
+    ).order_by(Favorite.created_at.desc()).all()
+
+
+@router.post("", response_model=FavoriteResponse, status_code=201)
+def create_favorite(data: FavoriteCreate, db: Session = Depends(get_db)):
+    user = resolve_user(int(data.user_id), db)
+    payload = {**data.model_dump(), "user_id": user.id}
+    if data.bicycle_id is not None:
+        bike = resolve_bicycle(int(data.bicycle_id), db)
+        payload["bicycle_id"] = bike.id
+    record = Favorite(**payload)
+    db.add(record)
+    db.commit()
+    db.refresh(record)
+    return record
+
+
+@router.put("/{favorite_id}", response_model=FavoriteResponse)
+def update_favorite(favorite_id: int, data: FavoriteUpdate, db: Session = Depends(get_db)):
+    record = db.query(Favorite).filter(Favorite.id == favorite_id).first()
+    if not record:
+        raise HTTPException(status_code=404, detail="Favorite not found")
+    for key, value in data.model_dump(exclude_unset=True).items():
+        setattr(record, key, value)
+    db.commit()
+    db.refresh(record)
+    return record
+
+
+@router.delete("/{favorite_id}", status_code=204)
+def delete_favorite(favorite_id: int, db: Session = Depends(get_db)):
+    record = db.query(Favorite).filter(Favorite.id == favorite_id).first()
+    if not record:
+        raise HTTPException(status_code=404, detail="Favorite not found")
+    db.delete(record)
+    db.commit()

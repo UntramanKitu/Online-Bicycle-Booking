@@ -36,6 +36,7 @@ def _db_user_to_response(user: UnifiedUser) -> dict:
         "department": None,
         "role": resolve_role(user),
         "status": "active" if user.is_active else "inactive",
+        "points": user.points,
     }
 
 

@@ -24,7 +24,11 @@ export default function AdminDashboard() {
     }
   }
 
-  useEffect(() => { loadUsers() }, [])
+  useEffect(() => {
+    // เลื่อนไป task ถัดไป — กันกฎ react-hooks/set-state-in-effect (setState ใน effect)
+    const timer = window.setTimeout(() => loadUsers(), 0)
+    return () => window.clearTimeout(timer)
+  }, [])
 
   const handleToggleRole = async (user) => {
     const newRole = user.role === 'admin' ? 'user' : 'admin'
@@ -150,7 +154,7 @@ export default function AdminDashboard() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((u, idx) => (
+              {filtered.map((u) => (
                 <tr key={u.id} className={u.status !== 'active' ? 'admin-row-inactive' : ''}>
                   <td className="admin-td-id">{u.id}</td>
                   <td className="admin-td-name">
