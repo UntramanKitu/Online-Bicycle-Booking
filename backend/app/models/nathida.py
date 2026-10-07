@@ -10,7 +10,7 @@ FK ชี้ไปตารางจริง — ไม่สร้างตา
 from datetime import datetime
 
 from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Identity, Integer, String, Text, func
-from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
+from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -39,6 +39,8 @@ class MaintenanceReport(Base):
     description: Mapped[str] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String(30), default="pending")
     resolved_note: Mapped[str | None] = mapped_column(Text)
+    # รูปภาพแนบตอนแจ้งซ่อม (เก็บ JSON array ของ URL เช่น ["/api/uploads/xxx.jpg"])
+    images: Mapped[list | None] = mapped_column(JSONB, nullable=True)
     reported_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 

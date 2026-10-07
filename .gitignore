@@ -16,3 +16,8 @@ wheels/
 # JavaScript dependencies and build output
 node_modules/
 frontend/dist/
+
+# Runtime logs / ไฟล์ที่อัปโหลดผ่านระบบแจ้งซ่อม (ห้ามเข้า repo)
+_srv.out
+_srv.err
+backend/uploads/

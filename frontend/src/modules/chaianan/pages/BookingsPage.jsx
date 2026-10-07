@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { api, getApiError } from '../../../api'
-import { formatDateTime, toIso } from '../../../utils'
+import { formatDateTime, toIso, toLocalInputValue } from '../../../utils'
 import { BOOKING_STATUSES } from '../../../constants'
 import { useCurrentUser } from '../../../context/currentUser'
 import Stars from '../../../components/Stars'
@@ -53,9 +53,20 @@ export default function BookingsPage() {
   const [reportIssue, setReportIssue] = useState('')
   const [reportDesc, setReportDesc] = useState('')
   const [reportSaving, setReportSaving] = useState(false)
-  // เตือนใกล้ถึงเวลารับรถ (15 นาทีก่อน)
+  // รูปแนบตอนแจ้งปัญหา (อัปโหลดขึ้น /api/upload ก่อนส่งรายงาน)
+  const [reportFiles, setReportFiles] = useState([])
+  const [reportPreviews, setReportPreviews] = useState([])
+  // เตือนใกล้ถึงเวลารับรถ (15 นาทีก่อน) — แจ้งเตือนจริงสร้างโดยเซิร์ฟเวอร์ (reminders.py) หน้านี้แค่แสดง banner
   const [pickupReminder, setPickupReminder] = useState(null)
-  const notifiedReminders = useRef(new Set())
+  // ค้นหา/เรียงตามระยะทาง (M10)
+  const [bikeQuery, setBikeQuery] = useState('')
+  const [bikeSort, setBikeSort] = useState('default')
+  // เลื่อนเวลาการจอง (Table 1 — แก้ไขเวลาจอง)
+  const [editFor, setEditFor] = useState(null)
+  const [editStart, setEditStart] = useState('')
+  const [editDuration, setEditDuration] = useState('60')
+  const [editError, setEditError] = useState(null)
+  const [editSaving, setEditSaving] = useState(false)
   // mock: รายการโปรด + แจ้งของหาย — แยก logic ไว้ที่ modules/akeapon (localStorage ยังไม่เชื่อม backend)
   const { favorites, favOnly, setFavOnly, toggleFavorite } = useFavorites()
   const { lostItems, lostFor, openLost, closeLost, saveLostItem } = useLostItems()
@@ -109,17 +120,8 @@ export default function BookingsPage() {
         .sort((a, b) => new Date(a.start_time) - new Date(b.start_time))
       if (soon.length > 0) {
         setPickupReminder(soon[0])
-        const b = soon[0]
-        if (userId && !notifiedReminders.current.has(b.id)) {
-          notifiedReminders.current.add(b.id)
-          api
-            .post('/notifications', {
-              user_id: userId,
-              title: 'ใกล้ถึงเวลารับรถแล้ว',
-              message: `อีกไม่เกิน 15 นาที ถึงเวลารับ ${getBikeName(b.bicycle_id)} ที่ ${b.pickup_location || 'จุดรับรถ'}`,
-            })
-            .catch(() => { /* สร้างแจ้งเตือนไม่ได้ไม่เป็นไร — banner ยังขึ้น */ })
-        }
+        // แจ้งเตือนเข้าระบบ (notification row) สร้างโดยเซิร์ฟเวอร์เอง — app/modules/nathida/reminders.py
+        // (เดิมหน้านี้ POST เอง → เปิดหน้าค้างไว้จะโดนส่งซ้ำ จึงตัดออก)
       } else {
         setPickupReminder(null)
       }
@@ -127,7 +129,7 @@ export default function BookingsPage() {
     check()
     const timer = window.setInterval(check, 30000)
     return () => window.clearInterval(timer)
-  }, [myBookings, userId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [myBookings])
 
   // mock: บันทึกการแจ้งของหาย (modules/akeapon — localStorage ยังไม่เชื่อม backend)
   function handleLostSaved(entry) {
@@ -178,6 +180,30 @@ export default function BookingsPage() {
     setReportFor(booking)
     setReportIssue('')
     setReportDesc('')
+    clearReportFiles()
+  }
+
+  // เคลียร์รูปที่เลือกแนบ + เพิกถอน object URL ชั่วคราว
+  function clearReportFiles() {
+    setReportPreviews((prev) => {
+      prev.forEach((url) => URL.revokeObjectURL(url))
+      return []
+    })
+    setReportFiles([])
+  }
+
+  function closeReport() {
+    setReportFor(null)
+    clearReportFiles()
+  }
+
+  function handleReportFiles(e) {
+    const files = Array.from(e.target.files || []).slice(0, 3)
+    setReportPreviews((prev) => {
+      prev.forEach((url) => URL.revokeObjectURL(url))
+      return files.map((f) => URL.createObjectURL(f))
+    })
+    setReportFiles(files)
   }
 
   async function handleReportSubmit(e) {
@@ -185,18 +211,73 @@ export default function BookingsPage() {
     if (!reportFor) return
     setReportSaving(true)
     try {
+      // อัปโหลดรูปก่อน (ถ้ามี) แล้วค่อยส่งรายงานพร้อม URL รูป
+      const imageUrls = []
+      for (const file of reportFiles) {
+        const fd = new FormData()
+        fd.append('file', file)
+        const up = await api.post('/upload', fd)
+        imageUrls.push(up.data.url)
+      }
       await api.post('/maintenance-reports', {
         bicycle_id: reportFor.bicycle_id,
         reported_by: userId,
         issue_type: reportIssue.trim(),
         description: reportDesc.trim(),
+        images: imageUrls,
       })
-      setReportFor(null)
+      closeReport()
       setMessage({ type: 'success', text: 'ส่งแจ้งปัญหาเรียบร้อย — ทีมช่างจะตรวจสอบให้' })
     } catch (err) {
       setMessage({ type: 'error', text: getApiError(err) })
     } finally {
       setReportSaving(false)
+    }
+  }
+
+  // ===== เลื่อนเวลา / แก้ไขการจอง (PUT /bookings/{id}) =====
+  function openEdit(booking) {
+    const start = new Date(booking.start_time)
+    if (Number.isNaN(start.getTime())) {
+      setMessage({ type: 'error', text: 'ข้อมูลเวลาของรายการจองไม่ถูกต้อง' })
+      return
+    }
+    setEditFor(booking)
+    setEditStart(toLocalInputValue(booking.start_time))
+    const minutes = Math.round((new Date(booking.end_time) - start) / 60000)
+    setEditDuration(String(minutes > 0 ? minutes : 60))
+    setEditError(null)
+  }
+
+  async function handleEditSubmit(e) {
+    e.preventDefault()
+    if (!editFor) return
+    const start = new Date(editStart)
+    if (Number.isNaN(start.getTime())) {
+      setEditError('รูปแบบวัน-เวลาไม่ถูกต้อง')
+      return
+    }
+    if (start.getTime() <= Date.now()) {
+      setEditError('ต้องเลือกเวลาใหม่ที่ยังมาไม่ถึงเท่านั้น')
+      return
+    }
+    const end = new Date(start.getTime() + Number(editDuration) * 60000)
+    setEditSaving(true)
+    setEditError(null)
+    setMessage(null)
+    try {
+      await api.put(`/bookings/${editFor.id}`, {
+        start_time: toIso(start),
+        end_time: toIso(end),
+      })
+      setEditFor(null)
+      setMessage({ type: 'success', text: 'เลื่อนเวลการจองเรียบร้อย ✓' })
+      await load()
+    } catch (err) {
+      // 409 = จักรยานถูกจองซ้อนช่วงเวลานั้น → โชว์ในฟอร์มให้เลือกเวลาใหม่
+      setEditError(getApiError(err))
+    } finally {
+      setEditSaving(false)
     }
   }
 
@@ -262,6 +343,22 @@ export default function BookingsPage() {
     }
   }
 
+  // M10: ค้นรหัสรถ/สถานี/รุ่น + เรียงตามระยะทางใกล้สุด (distance เป็นข้อความ "150 ม." → ดึงตัวเลข)
+  const distanceMeters = (value) => {
+    const n = Number(String(value ?? '').replace(/[^\d.]/g, ''))
+    return Number.isFinite(n) ? n : Number.POSITIVE_INFINITY
+  }
+  let visibleBikes = favOnly ? bikes.filter((b) => favorites.includes(b.id)) : bikes
+  const query = bikeQuery.trim().toLowerCase()
+  if (query) {
+    visibleBikes = visibleBikes.filter((b) =>
+      [b.code, b.model, b.station, b.type].some((v) => String(v || '').toLowerCase().includes(query))
+    )
+  }
+  if (bikeSort === 'near') {
+    visibleBikes = [...visibleBikes].sort((a, b) => distanceMeters(a.distance) - distanceMeters(b.distance))
+  }
+
   if (selectedBike?.code?.startsWith('BK-')) {
     return <SuccessView bike={selectedBike} onBack={() => setSelectedBike(null)} />
   }
@@ -277,6 +374,20 @@ export default function BookingsPage() {
         <p>เลือกคันที่ว่างใกล้คุณ แล้วยืนยันการจองได้ทันที</p>
         {/* mock: กรองรายการโปรด — modules/akeapon (ยังไม่เชื่อม backend) */}
         <FavoritesFilter count={favorites.length} checked={favOnly} onChange={setFavOnly} />
+        {/* M10: ค้นหา + เรียงตามระยะทาง */}
+        <div className="bike-search-bar">
+          <input
+            type="search"
+            placeholder="ค้นหา เช่น BIKE-002, สถานี, รุ่น..."
+            value={bikeQuery}
+            onChange={(e) => setBikeQuery(e.target.value)}
+            aria-label="ค้นหาจักรยาน"
+          />
+          <select value={bikeSort} onChange={(e) => setBikeSort(e.target.value)} aria-label="เรียงจักรยาน">
+            <option value="default">เรียงตามเดิม</option>
+            <option value="near">🚶 ระยะทางใกล้สุด</option>
+          </select>
+        </div>
       </div>
       {message && <div className={`alert ${message.type === 'error' ? 'alert-error' : 'alert-success'}`}>{message.text}</div>}
       {/* เตือนใกล้ถึงเวลารับรถ (ภายใน 15 นาที) */}
@@ -291,7 +402,7 @@ export default function BookingsPage() {
       )}
       {loading ? <p className="empty">กำลังโหลดข้อมูล...</p> : (
         <div className="bike-grid">
-          {(favOnly ? bikes.filter((b) => favorites.includes(b.id)) : bikes).map((bike) => {
+          {visibleBikes.map((bike) => {
             const available = bike.available
             return <article className={`bike-card ${available ? '' : 'disabled'}`} key={bike.id}>
               <div className="bike-thumb" style={{ background: bike.tint }}>
@@ -312,6 +423,9 @@ export default function BookingsPage() {
             </article>
           })}
         </div>
+      )}
+      {!loading && visibleBikes.length === 0 && (query || bikeSort === 'near') && (
+        <p className="empty">ไม่พบจักรยานที่ตรงกับการค้นหา</p>
       )}
       {favOnly && favorites.length === 0 && !loading && <p className="empty">ยังไม่มีรายการโปรด — กด ♡ ที่การ์ดจักรยานเพื่อเพิ่ม</p>}
       <section className="my-bookings">
@@ -360,15 +474,19 @@ export default function BookingsPage() {
               <span className={`status-pill ${booking.status === 'completed' ? 'free' : 'busy'}`}>
                 {(BOOKING_STATUSES[booking.status] || {}).label || booking.status}
               </span>
-              {/* ปุ่มจัดการ: เฉพาะ booking ของตัวเอง (แอดมินดูของคนอื่นได้แต่ไม่กดแทน) */}
-              {isMine && (
+              {/* ปุ่มจัดการ: ของตัวเองทั้งหมด + แอดมินกด "ยืนยัน" แทนผู้ใช้ได้ (Confirm) */}
+              {(isMine || isAdmin) && (
                 <div className="booking-actions">
-                  {['pending', 'confirmed'].includes(booking.status) && <><button className="btn btn-primary btn-sm" onClick={() => updateBookingState(booking.id, 'borrow')}>รับรถ</button><button className="btn btn-ghost btn-sm" onClick={() => updateBookingState(booking.id, 'cancel')}>ยกเลิก</button></>}
-                  {booking.status === 'in_progress' && <button className="btn btn-primary btn-sm" onClick={() => updateBookingState(booking.id, 'return')}>คืนรถ</button>}
+                  {isMine && ['pending', 'confirmed'].includes(booking.status) && <><button className="btn btn-primary btn-sm" onClick={() => updateBookingState(booking.id, 'borrow')}>รับรถ</button><button className="btn btn-ghost btn-sm" onClick={() => updateBookingState(booking.id, 'cancel')}>ยกเลิก</button></>}
+                  {/* เลื่อนเวลา/แก้ไขการจอง — เฉพาะรายการที่ยังไม่เริ่ม (Table 1: Edit) */}
+                  {isMine && ['pending', 'confirmed'].includes(booking.status) && <button className="btn btn-ghost btn-sm" onClick={() => openEdit(booking)}>เลื่อนเวลา</button>}
+                  {isMine && booking.status === 'in_progress' && <button className="btn btn-primary btn-sm" onClick={() => updateBookingState(booking.id, 'return')}>คืนรถ</button>}
+                  {/* ยืนยันการจอง (Confirm) — แอดมินยืนยันแทนผู้ใช้ */}
+                  {isAdmin && booking.status === 'pending' && <button className="btn btn-primary btn-sm" onClick={() => updateBookingState(booking.id, 'confirm')}>ยืนยัน</button>}
                   {/* แจ้งปัญหา — ใช้ได้ตั้งแต่รับรถแล้ว (in_progress) จนถึงหลังคืนรถ (completed) */}
-                  {['in_progress', 'completed'].includes(booking.status) && <button className="btn btn-ghost btn-sm" onClick={() => openReport(booking)}>แจ้งปัญหา</button>}
+                  {isMine && ['in_progress', 'completed'].includes(booking.status) && <button className="btn btn-ghost btn-sm" onClick={() => openReport(booking)}>แจ้งปัญหา</button>}
                   {/* แจ้งของหาย — modules/akeapon (mock localStorage ยังไม่เชื่อม backend) */}
-                  {['in_progress', 'completed'].includes(booking.status) && <button className="btn btn-ghost btn-sm" onClick={() => openLost(booking)}>แจ้งของหาย</button>}
+                  {isMine && ['in_progress', 'completed'].includes(booking.status) && <button className="btn btn-ghost btn-sm" onClick={() => openLost(booking)}>แจ้งของหาย</button>}
                 </div>
               )}
             </article>
@@ -403,6 +521,50 @@ export default function BookingsPage() {
           <div className="confirm-actions"><button className="btn btn-primary" disabled={saving}>{saving ? 'กำลังบันทึก...' : 'ยืนยันการจอง'}</button><button type="button" className="btn btn-ghost" onClick={() => setSelectedBike(null)}>ยกเลิก</button></div>
         </div>
       </form>}
+      {editFor && (
+        <form className="booking-modal" onSubmit={handleEditSubmit}>
+          <div className="modal-card">
+            <button type="button" className="modal-close" onClick={() => setEditFor(null)} aria-label="ปิด">×</button>
+            <div className="summary-row">
+              <BikeIcon />
+              <div>
+                <strong>เลื่อนเวลาการจอง</strong>
+                <span>{getBikeName(editFor.bicycle_id)} · เดิม {formatDateTime(editFor.start_time)}</span>
+              </div>
+            </div>
+            <div className="field">
+              <label htmlFor="edit-start">วัน-เวลาเริ่มต้นใหม่ *</label>
+              <input
+                id="edit-start"
+                type="datetime-local"
+                value={editStart}
+                onChange={(e) => { setEditStart(e.target.value); setEditError(null) }}
+                required
+              />
+              <small>ระบบจะตรวจอีกครั้งว่าจักรยานว่างในช่วงเวลาใหม่หรือไม่</small>
+            </div>
+            <div className="field">
+              <label htmlFor="edit-duration">ระยะเวลาที่ต้องการยืม</label>
+              <select id="edit-duration" value={editDuration} onChange={(e) => setEditDuration(e.target.value)}>
+                {[30, 60, 120, 480].includes(Number(editDuration)) ? null : (
+                  <option value={editDuration}>{editDuration} นาที</option>
+                )}
+                <option value="30">30 นาที</option>
+                <option value="60">1 ชั่วโมง</option>
+                <option value="120">2 ชั่วโมง</option>
+                <option value="480">ทั้งวัน</option>
+              </select>
+            </div>
+            {editError && <small className="field-error">{editError}</small>}
+            <div className="confirm-actions">
+              <button className="btn btn-primary" disabled={editSaving}>
+                {editSaving ? 'กำลังบันทึก...' : 'บันทึกเวลาใหม่'}
+              </button>
+              <button type="button" className="btn btn-ghost" onClick={() => setEditFor(null)}>ยกเลิก</button>
+            </div>
+          </div>
+        </form>
+      )}
       {reviewFor && (
         <form className="booking-modal" onSubmit={handleReviewSubmit}>
           <div className="modal-card">
@@ -435,7 +597,7 @@ export default function BookingsPage() {
       {reportFor && (
         <form className="booking-modal" onSubmit={handleReportSubmit}>
           <div className="modal-card">
-            <button type="button" className="modal-close" onClick={() => setReportFor(null)} aria-label="ปิด">×</button>
+            <button type="button" className="modal-close" onClick={closeReport} aria-label="ปิด">×</button>
             <div className="summary-row"><BikeIcon /><div><strong>แจ้งปัญหาจักรยาน</strong><span>{getBikeName(reportFor.bicycle_id)} · จักรยาน #{reportFor.bicycle_id}</span></div></div>
             <div className="field">
               <label htmlFor="report-issue">ประเภทปัญหา *</label>
@@ -466,11 +628,22 @@ export default function BookingsPage() {
                 required
               />
             </div>
+            <div className="field">
+              <label htmlFor="report-files">รูปภาพประกอบ (สูงสุด 3 รูป — ไม่บังคับ)</label>
+              <input id="report-files" type="file" accept="image/*" multiple onChange={handleReportFiles} />
+              {reportPreviews.length > 0 && (
+                <div className="report-image-preview">
+                  {reportPreviews.map((url, i) => (
+                    <img key={url} src={url} alt={`ตัวอย่างรูป ${i + 1}`} />
+                  ))}
+                </div>
+              )}
+            </div>
             <div className="confirm-actions">
               <button className="btn btn-primary" disabled={reportSaving || !reportIssue.trim() || !reportDesc.trim()}>
                 {reportSaving ? 'กำลังส่ง...' : 'ส่งแจ้งปัญหา'}
               </button>
-              <button type="button" className="btn btn-ghost" onClick={() => setReportFor(null)}>ยกเลิก</button>
+              <button type="button" className="btn btn-ghost" onClick={closeReport}>ยกเลิก</button>
             </div>
           </div>
         </form>
@@ -480,5 +653,6 @@ export default function BookingsPage() {
 }
 
 function SuccessView({ bike, onBack }) {
-  return <div className="success-view"><div className="success-icon">✓</div><h1>จองสำเร็จ</h1><p>ไปที่ {bike.station} แล้วยื่นบัตรประชาชนหรือบัตรนักศึกษาเพื่อเข้าใช้งานจักรยาน {bike.model} {bike.id}</p><div className="qr-box" /><div className="booking-code">{bike.code}</div><button className="btn btn-primary" onClick={onBack}>กลับไปหน้าเลือกจักรยาน</button></div>
+  // ไม่มี QR/ชำระเงินแล้ว — ใช้บัตรประชาชน/บัตรนักศึกษาแสดงตัวจริงแทน (ยกเลิกตามข้อสรุป)
+  return <div className="success-view"><div className="success-icon">✓</div><h1>จองสำเร็จ</h1><p>ไปที่ {bike.station} แล้วยื่นบัตรประชาชนหรือบัตรนักศึกษาเพื่อเข้าใช้งานจักรยาน {bike.model} {bike.id}</p><div className="booking-code">{bike.code}</div><button className="btn btn-primary" onClick={onBack}>กลับไปหน้าเลือกจักรยาน</button></div>
 }

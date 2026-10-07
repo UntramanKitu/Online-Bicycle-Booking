@@ -1,11 +1,19 @@
 import axios from 'axios'
 
-const API_BASE = import.meta.env.VITE_API_URL || ''
+export const API_BASE = import.meta.env.VITE_API_URL || ''
 
 export const api = axios.create({
   baseURL: `${API_BASE}/api`,
   withCredentials: true,
 })
+
+/** แปลง path ของไฟล์จาก backend (เช่น /api/uploads/x.jpg) เป็น URL เต็ม
+ * รองรับกรณีตั้ง VITE_API_URL เป็นคนละ origin กับหน้าเว็บ */
+export function assetUrl(path) {
+  if (!path) return path
+  if (/^https?:/i.test(path)) return path
+  return `${API_BASE}${path}`
+}
 
 export const authLoginUrl = `${API_BASE}/api/auth/google/login`
 

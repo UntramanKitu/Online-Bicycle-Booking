@@ -19,6 +19,7 @@ const navItems = [
 
 const adminNavItems = [
   { to: '/admin', label: '🛡️ จัดการผู้ใช้' },
+  { to: '/admin/bikes', label: '🚲 จัดการจักรยาน' },
 ]
 
 export default function Layout() {
@@ -48,7 +49,7 @@ export default function Layout() {
           <button className="menu-button" type="button" aria-label="เปิดเมนู" onClick={() => setSidebarOpen((open) => !open)}>
             <span />
           </button>
-          <div className="brand">
+          <div className="brand" aria-label="Brand">
             <span className="brand-mark" aria-hidden="true">⌁</span>
             <span className="brand-text">BikeShare</span>
           </div>

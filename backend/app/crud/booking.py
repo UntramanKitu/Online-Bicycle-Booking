@@ -233,6 +233,7 @@ def change_booking_state(
         "in_progress": {"pending", "confirmed"},
         "completed": {"in_progress"},
         "cancelled": {"pending", "confirmed"},
+        "confirmed": {"pending"},  # ยืนยันการจอง (Confirm) — เฉพาะรายการที่ยังรออยู่
     }
     if db_booking.status not in allowed[next_status]:
         raise BookingStateError(

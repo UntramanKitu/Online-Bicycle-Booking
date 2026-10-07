@@ -14,8 +14,32 @@ from app.crud.booking import (
 from app.schemas.booking import (
     ReservationBookingCreate, ReservationBookingUpdate, ReservationBookingResponse,
 )
+from app.models.nathida import Notification
+from app.models.unified_user import UnifiedUser
+from app.modules.auth.roles import resolve_role
 
 router = APIRouter()
+
+# งดยืมอัตโนมัติ (M12): แต้มต่ำกว่าเกณฑ์นี้ → จอง/ยืมจักรยานไม่ได้ (เกณฑ์เดียวกับหน้า "คะแนน & บทลงโทษ")
+MIN_BORROW_POINTS = 6
+
+
+def _check_borrow_allowed(db: Session, user_id: int) -> None:
+    """ตรวจสิทธิ์การจอง/ยืมของผู้ใช้ — 403 ถ้าแต้มต่ำกว่าเกณฑ์หรือบัญชีถูกปิด"""
+    user = db.get(UnifiedUser, user_id)
+    if user is None:
+        return  # ไม่พบผู้ใช้ → ปล่อยให้ endpoint อื่นจัดการ (เช่น 404)
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="บัญชีของคุณถูกปิดใช้งาน ติดต่อแอดมิน")
+    points = user.points if user.points is not None else 12
+    if points < MIN_BORROW_POINTS:
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                f"แต้มของคุณต่ำกว่า {MIN_BORROW_POINTS} คะแนน "
+                "ระบบงดยืม/จองจักรยานชั่วคราว — ติดต่อแอดมินเพื่อขอคืนสิทธิ์"
+            ),
+        )
 
 
 @router.get("/bookings", response_model=List[ReservationBookingResponse])
@@ -51,6 +75,7 @@ def read_booking(booking_id: int, db: Session = Depends(get_db)):
 @router.post("/bookings", response_model=ReservationBookingResponse, status_code=201)
 def create_new_booking(booking: ReservationBookingCreate, db: Session = Depends(get_db)):
     """Create – เพิ่มการจองจักรยานล่วงหน้า (ตรวจสอบ Availability ของจักรยานด้วย)"""
+    _check_borrow_allowed(db, booking.user_id)  # M12: งดยืมอัตโนมัติเมื่อแต้มต่ำ
     try:
         return create_booking(db, booking)
     except BookingConflictError as e:
@@ -99,6 +124,7 @@ def borrow_booking(
     db: Session = Depends(get_db),
 ):
     """รับจักรยานจริง: pending/confirmed -> in_progress"""
+    _check_borrow_allowed(db, user_id)  # M12: งดยืมอัตโนมัติเมื่อแต้มต่ำ
     try:
         booking = change_booking_state(db, booking_id, user_id, "in_progress")
     except BookingStateError as e:
@@ -137,4 +163,37 @@ def cancel_booking(
         raise HTTPException(status_code=400, detail=str(e))
     if booking is None:
         raise HTTPException(status_code=404, detail="Booking not found")
+    return booking
+
+
+@router.post("/bookings/{booking_id}/confirm", response_model=ReservationBookingResponse)
+def confirm_booking(
+    booking_id: int,
+    user_id: int = Query(..., description="ID ผู้กดยืนยัน (แอดมินหรือเจ้าของจอง)"),
+    db: Session = Depends(get_db),
+):
+    """ยืนยันการจอง (Confirm): pending -> confirmed — เฉพาะแอดมินหรือเจ้าของจอง
+    พร้อมสร้างแจ้งเตือนอัตโนมัติให้เจ้าของ"""
+    db_booking = get_booking(db, booking_id)
+    if db_booking is None:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    actor = db.get(UnifiedUser, user_id)
+    if actor is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    if actor.id != db_booking.user_id and resolve_role(actor) != "admin":
+        raise HTTPException(status_code=403, detail="เฉพาะแอดมินหรือเจ้าของจองเท่านั้นที่ยืนยันได้")
+    try:
+        booking = change_booking_state(db, booking_id, db_booking.user_id, "confirmed")
+    except BookingStateError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    # แจ้งเตือนอัตโนมัติไปยังเจ้าของจองว่าได้รับการยืนยันแล้ว
+    db.add(Notification(
+        user_id=booking.user_id,
+        title="การจองได้รับการยืนยัน",
+        message=(
+            f"การจองจักรยาน #{booking.bicycle_id} ของคุณได้รับการยืนยันแล้ว "
+            f"เวลารับรถ {booking.start_time:%d/%m/%Y %H:%M} ที่ {booking.pickup_location or 'จุดรับรถ'}"
+        ),
+    ))
+    db.commit()
     return booking

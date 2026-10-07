@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@500;600;700&family=Sarabun:wght@400;500;600&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@500;600;700&family=Sarabun:wght@400;500;600&display=swap');
 
 /* =========================================================
    BOT BikeA Theme (template)
@@ -539,7 +539,6 @@ h1, h2, h3, .brand-text { font-family: 'Kanit', sans-serif; }
 .success-icon { display: grid; width: 64px; height: 64px; place-items: center; margin: 0 auto 18px; border-radius: 50%; background: rgba(42,131,95,.12); color: var(--color-emerald); font-size: 32px; }
 .success-view h1 { margin: 0 0 8px; font-size: 21px; }
 .success-view p { margin: 0 0 22px; color: var(--text-muted); font-size: 14px; line-height: 1.6; }
-.qr-box { width: 140px; height: 140px; margin: 0 auto 22px; border: 1px solid var(--border); border-radius: 12px; background: repeating-linear-gradient(0deg, var(--text) 0 6px, transparent 6px 12px), repeating-linear-gradient(90deg, var(--text) 0 6px, transparent 6px 12px); background-blend-mode: multiply; background-color: #fff; opacity: .85; }
 .booking-code { margin-bottom: 20px; padding: 14px; border: 1px dashed var(--border); border-radius: 12px; font-family: 'Kanit', sans-serif; font-size: 20px; font-weight: 600; letter-spacing: 1px; }
 .my-bookings { margin-top: 42px; }
 .my-bookings .booking-heading { margin-bottom: 14px; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
@@ -701,5 +700,40 @@ h1, h2, h3, .brand-text { font-family: 'Kanit', sans-serif; }
 .admin-status-actions {
   display: flex; gap: 6px; flex-wrap: wrap;
 }
+
+/* ====== ค้นหา/เรียงจักรยาน (M10) ====== */
+.bike-search-bar {
+  display: flex; gap: 10px; flex-wrap: wrap; width: 100%;
+  margin-top: 12px;
+}
+.bike-search-bar input {
+  flex: 1 1 240px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font: inherit;
+  background: var(--surface);
+}
+.bike-search-bar select {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font: inherit;
+  background: var(--surface);
+}
+
+/* ====== รูปแนบแจ้งซ่อม (upload) ====== */
+.report-image-preview {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;
+}
+.report-image-preview img {
+  width: 72px; height: 72px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  display: block;
+}
+.report-image-preview a { line-height: 0; }
+.ticket-card .report-image-preview { margin-bottom: 8px; }
 
 

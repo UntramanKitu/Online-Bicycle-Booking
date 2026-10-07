@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { api, getApiError } from '../../../api'
+import { api, getApiError, assetUrl } from '../../../api'
 import { formatDateTime } from '../../../utils'
 import { useCurrentUser } from '../../../context/currentUser'
 
@@ -22,6 +22,9 @@ export default function MaintenancePage() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(emptyForm())
   const [saving, setSaving] = useState(false)
+  // ไฟล์รูปที่เลือกแนบตอนแจ้งซ่อม (preview = object URL ชั่วคราวฝั่งเบราว์เซอร์)
+  const [reportFiles, setReportFiles] = useState([])
+  const [reportPreviews, setReportPreviews] = useState([])
   const [message, setMessage] = useState(null)
 
   async function load(nextScope = scope) {
@@ -59,19 +62,48 @@ export default function MaintenancePage() {
     return found ? `${found.model} (${found.code})` : `จักรยาน #${id}`
   }
 
+  function toggleForm() {
+    setShowForm((v) => !v)
+    // ปิดฟอร์ม → เคลียร์รูปที่เลือกไว้ด้วย
+    if (showForm) {
+      setReportFiles([])
+      setReportPreviews([])
+    }
+  }
+
+  function handleFilesChosen(e) {
+    const files = Array.from(e.target.files || []).slice(0, 3)
+    setReportPreviews((prev) => {
+      prev.forEach((url) => URL.revokeObjectURL(url))
+      return files.map((f) => URL.createObjectURL(f))
+    })
+    setReportFiles(files)
+  }
+
   async function handleCreate(e) {
     e.preventDefault()
     setSaving(true)
     setMessage(null)
     try {
+      // อัปโหลดรูปทีละไฟล์ก่อน แล้วค่อยส่งรายงานพร้อม URL
+      const imageUrls = []
+      for (const file of reportFiles) {
+        const fd = new FormData()
+        fd.append('file', file)
+        const up = await api.post('/upload', fd)
+        imageUrls.push(up.data.url)
+      }
       await api.post('/maintenance-reports', {
         bicycle_id: Number(form.bicycle_id),
         reported_by: userId,
         issue_type: form.issue_type,
         description: form.description,
+        images: imageUrls,
       })
       setMessage({ type: 'success', text: 'แจ้งซ่อมเรียบร้อย ✓' })
       setForm(emptyForm())
+      setReportFiles([])
+      setReportPreviews([])
       setShowForm(false)
       load()
     } catch (err) {
@@ -107,7 +139,7 @@ export default function MaintenancePage() {
               </button>
             </div>
           )}
-          <button className="btn btn-primary" onClick={() => setShowForm((v) => !v)}>
+          <button className="btn btn-primary" onClick={toggleForm}>
             {showForm ? 'ปิดฟอร์ม' : '+ แจ้งซ่อม'}
           </button>
         </div>
@@ -155,11 +187,28 @@ export default function MaintenancePage() {
               onChange={(e) => setForm({ ...form, description: e.target.value })}
             />
           </div>
+          <div className="field">
+            <label htmlFor="report-files">รูปภาพประกอบ (ไม่บังคับ — สูงสุด 3 รูป, รูปละไม่เกิน 5 MB)</label>
+            <input
+              id="report-files"
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleFilesChosen}
+            />
+            {reportPreviews.length > 0 && (
+              <div className="report-image-preview">
+                {reportPreviews.map((url, i) => (
+                  <img key={url} src={url} alt={`ตัวอย่างรูป ${i + 1}`} />
+                ))}
+              </div>
+            )}
+          </div>
           <div className="form-actions">
             <button className="btn btn-primary" disabled={saving}>
               {saving ? 'กำลังส่ง...' : 'ส่งแจ้งซ่อม'}
             </button>
-            <button type="button" className="btn btn-ghost" onClick={() => setShowForm(false)}>
+            <button type="button" className="btn btn-ghost" onClick={toggleForm}>
               ยกเลิก
             </button>
           </div>
@@ -181,6 +230,15 @@ export default function MaintenancePage() {
                   <span className={`badge ${meta.cls}`}>{meta.label}</span>
                 </div>
                 <p>{r.description}</p>
+                {(r.images || []).length > 0 && (
+                  <div className="report-image-preview">
+                    {r.images.map((src) => (
+                      <a key={src} href={assetUrl(src)} target="_blank" rel="noreferrer" title="ดูรูปเต็ม">
+                        <img src={assetUrl(src)} alt="รูปแจ้งซ่อม" />
+                      </a>
+                    ))}
+                  </div>
+                )}
                 <div className="ticket-card-badges">
                   {scope === 'all' && <span className="badge badge-muted">ผู้แจ้ง {getUserName(r.reported_by)}</span>}
                   <span className="muted small">แจ้งเมื่อ {formatDateTime(r.reported_at)}</span>

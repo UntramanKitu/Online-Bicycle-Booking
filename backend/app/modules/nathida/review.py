@@ -9,7 +9,7 @@
 
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -18,6 +18,7 @@ from app.database import get_db
 from app.models.bicycle import Bicycle
 from app.models.nathida import Review
 from app.models.unified_user import UnifiedUser
+from app.modules.auth.roles import resolve_role
 
 router = APIRouter(prefix="/api/reviews", tags=["Feedback & Rating"])
 
@@ -117,3 +118,23 @@ def update_review(review_id: int, payload: ReviewUpdate, db: Session = Depends(g
     db.commit()
     db.refresh(review)
     return review
+
+
+@router.delete("/{review_id}")
+def delete_review(
+    review_id: int,
+    user_id: int = Query(..., description="ID ผู้กดลบ (เจ้าของรีวิวหรือแอดมิน)"),
+    db: Session = Depends(get_db),
+):
+    """ลบรีวิว — เจ้าของรีวิวคนเดียวกัน หรือแอดมิน (ลบรีวิวของคนอื่นได้)"""
+    review = db.get(Review, review_id)
+    if review is None:
+        raise HTTPException(404, "Review not found.")
+    user = db.get(UnifiedUser, user_id)
+    if user is None:
+        raise HTTPException(404, "User not found.")
+    if review.user_id != user.id and resolve_role(user) != "admin":
+        raise HTTPException(403, "คุณไม่มีสิทธิ์ลบรีวิวนี้")
+    db.delete(review)
+    db.commit()
+    return {"deleted": 1}

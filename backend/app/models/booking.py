@@ -22,6 +22,9 @@ class ReservationBooking(Base):
     note = Column(Text, nullable=True)
     checked_out_at = Column(DateTime(timezone=True), nullable=True)
     checked_in_at = Column(DateTime(timezone=True), nullable=True)
+    # แจ้งเตือนอัตโนมัติ (FR3.6) — ธงกันไม่ให้ส่งซ้ำ (เพิ่มด้วย ALTER ... IF NOT EXISTS)
+    pickup_reminded_at = Column(DateTime(timezone=True), nullable=True)
+    overdue_notified_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 

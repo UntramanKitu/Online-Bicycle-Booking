@@ -33,11 +33,14 @@ class ReportCreate(BaseModel):
     reported_by: int = Field(gt=0)
     issue_type: str = Field(max_length=50)
     description: str = Field(min_length=1)
+    # รูปภาพแนบ (URL ที่ได้จาก POST /api/upload) — สูงสุด 5 รูป
+    images: list[str] = Field(default_factory=list, max_length=5)
 
 
 class ReportUpdate(BaseModel):
     issue_type: str | None = Field(None, max_length=50)
     description: str | None = Field(None, min_length=1)
+    images: list[str] | None = Field(None, max_length=5)
 
 
 class StatusUpdate(BaseModel):
@@ -55,6 +58,8 @@ class ReportResponse(BaseModel):
     description: str
     status: str
     resolved_note: str | None
+    # แถวเก่าที่ยังไม่เคยมีรูปจะเป็น None (JSONB ยังไม่ถูก insert)
+    images: list[str] | None = None
     reported_at: datetime
     resolved_at: datetime | None
 

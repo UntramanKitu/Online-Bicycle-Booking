@@ -13,7 +13,7 @@ function formatRating(value) {
 }
 
 export default function ReviewsPage() {
-  const { userId, currentUser, usersLoading } = useCurrentUser()
+  const { userId, currentUser, usersLoading, isAdmin } = useCurrentUser()
   const [bikes, setBikes] = useState([])
   const [selectedBike, setSelectedBike] = useState('')
   const [reviews, setReviews] = useState([])
@@ -22,6 +22,7 @@ export default function ReviewsPage() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(emptyForm())
   const [saving, setSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState(null)
   const [message, setMessage] = useState(null)
 
   async function loadBikes() {
@@ -86,6 +87,22 @@ export default function ReviewsPage() {
     }
   }
 
+  // ลบรีวิว — เจ้าของตัวเอง หรือแอดมิน (คนอื่นจะไม่เห็นปุ่มนี้)
+  async function handleDelete(review) {
+    if (!window.confirm('ต้องการลบรีวิวนี้จริงหรือไม่?')) return
+    setDeletingId(review.id)
+    setMessage(null)
+    try {
+      await api.delete(`/reviews/${review.id}`, { params: { user_id: userId } })
+      setMessage({ type: 'success', text: 'ลบรีวิวเรียบร้อย' })
+      await loadReviews(selectedBike)
+    } catch (err) {
+      setMessage({ type: 'error', text: getApiError(err) })
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
   if (!usersLoading && !currentUser) {
     return <p className="empty">กรุณาเข้าสู่ระบบด้วย Google ก่อนใช้งาน</p>
   }
@@ -105,12 +122,17 @@ export default function ReviewsPage() {
     handleCreate={handleCreate}
     loading={loading}
     reviews={reviews}
+    userId={userId}
+    isAdmin={isAdmin}
+    deletingId={deletingId}
+    handleDelete={handleDelete}
   />
 }
 
 function ReviewsView(props) {
   const { summary, message, setMessage, bikes, selectedBike, setSelectedBike } = props
   const { showForm, setShowForm, setForm, form, saving, handleCreate, loading, reviews } = props
+  const { userId, isAdmin, deletingId, handleDelete } = props
   return (
     <div className="page-section">
       <div className="section-head">
@@ -176,18 +198,31 @@ function ReviewsView(props) {
         <p className="empty">ยังไม่มีรีวิวสำหรับจักรยานคันนี้</p>
       ) : (
         <div className="ticket-cards">
-          {reviews.map((r) => (
-            <article className="ticket-card" key={r.id}>
-              <div className="ticket-card-head">
-                <h3>{r.reviewer_name || 'ผู้ใช้'}</h3>
-                <span className="badge badge-warn">{'★'.repeat(Math.round(Number(r.rating)))} ({formatRating(r.rating)}/5)</span>
-              </div>
-              <p>{r.comment}</p>
-              <div className="ticket-card-badges">
-                <span className="muted small">{formatDateTime(r.created_at)}</span>
-              </div>
-            </article>
-          ))}
+          {reviews.map((r) => {
+            const canDelete = Number(r.user_id) === Number(userId) || isAdmin
+            return (
+              <article className="ticket-card" key={r.id}>
+                <div className="ticket-card-head">
+                  <h3>{r.reviewer_name || 'ผู้ใช้'}</h3>
+                  <span className="badge badge-warn">{'★'.repeat(Math.round(Number(r.rating)))} ({formatRating(r.rating)}/5)</span>
+                </div>
+                <p>{r.comment}</p>
+                <div className="ticket-card-badges">
+                  <span className="muted small">{formatDateTime(r.created_at)}</span>
+                  {canDelete && (
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => handleDelete(r)}
+                      disabled={deletingId === r.id}
+                      title={isAdmin && Number(r.user_id) !== Number(userId) ? 'แอดมินสามารถลบรีวิวใดก็ได้' : 'ลบรีวิวของคุณ'}
+                    >
+                      {deletingId === r.id ? 'กำลังลบ...' : '🗑️ ลบ'}
+                    </button>
+                  )}
+                </div>
+              </article>
+            )
+          })}
         </div>
       )}
     </div>

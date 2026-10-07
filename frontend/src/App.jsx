@@ -14,6 +14,7 @@ import ScoresPage from './modules/akeapon/pages/ScoresPage'
 import FavoritesPage from './modules/akeapon/pages/FavoritesPage'
 import LostItemsPage from './modules/akeapon/pages/LostItemsPage'
 import AdminDashboard from './modules/auth/AdminDashboard'
+import BikesAdminPage from './modules/auth/BikesAdminPage'
 
 function RequireAuth({ children }) {
   const { currentUser, usersLoading } = useCurrentUser()
@@ -51,12 +52,20 @@ export default function App() {
             <Route path="scores" element={<ScoresPage />} />
             <Route path="favorites" element={<FavoritesPage />} />
             <Route path="lost-items" element={<LostItemsPage />} />
-            {/* Admin-only route */}
+            {/* Admin-only routes */}
             <Route
               path="admin"
               element={
                 <RequireAdmin>
                   <AdminDashboard />
+                </RequireAdmin>
+              }
+            />
+            <Route
+              path="admin/bikes"
+              element={
+                <RequireAdmin>
+                  <BikesAdminPage />
                 </RequireAdmin>
               }
             />

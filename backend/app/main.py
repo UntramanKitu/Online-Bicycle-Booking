@@ -11,8 +11,9 @@ if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.database import Base, engine
-from app.routers import bicycle, user
+from app.routers import bicycle, user, uploads
 from app.modules.eakapol import favorites, lost_items, penalties
 from app.modules.auth import router as auth
 from app.modules.chaianan.reservation_booking import router as reservation_booking
@@ -20,6 +21,7 @@ from app.modules.chaianan.group_ride_bookings import router as group_ride
 from app.modules.chaianan.support_tickets import router as support_ticket
 from app.modules.nathida import maintenance as nathida_maintenance
 from app.modules.nathida import notification as nathida_notification
+from app.modules.nathida import reminders as nathida_reminders
 from app.modules.nathida import review as nathida_review
 from app.models.bicycle import Bicycle
 from app.models.unified_user import UnifiedUser
@@ -41,10 +43,15 @@ app.include_router(lost_items.router)
 app.include_router(penalties.router)
 app.include_router(bicycle.router, prefix="/api", tags=["bicycle"])
 app.include_router(user.router, prefix="/api", tags=["users"])
+app.include_router(uploads.router, prefix="/api", tags=["upload"])
 app.include_router(auth.router, prefix="/api")
 app.include_router(nathida_notification.router)
 app.include_router(nathida_maintenance.router)
 app.include_router(nathida_review.router)
+
+# เสิร์ฟรูปที่อัปโหลด (แจ้งซ่อม) — mount ใต้ /api เพื่อให้ผ่าน vite proxy เหมือน endpoint อื่น
+uploads.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/api/uploads", StaticFiles(directory=str(uploads.UPLOAD_DIR)), name="uploads")
 
 # สร้างตาราง (ทำซ้ำได้ / idempotent — ใช้ checkfirst ของ SQLAlchemy)
 TABLES = [
@@ -126,6 +133,36 @@ def migrate_review_rating():
                 "USING rating::DOUBLE PRECISION"
             ))
 
+
+def migrate_new_columns():
+    """เพิ่มคอลัมน์ที่เพิ่มใหม่ให้ตารางเดิมแบบ idempotent (create_all ไม่เพิ่มคอลัมน์ให้ตารางเก่า)
+
+    - bicycle: คอลัมน์จัดการจักรยาน M02 (แถว seed เดิมค่า NULL → GET fallback ไป BIKE_PRESENTATION)
+    - maintenance_reports.images: รูปแนบตอนแจ้งซ่อม
+    - reservation_booking: ธงแจ้งเตือนอัตโนมัติ (เตือน 15 นาทีก่อนรับรถ / เลยกำหนดคืน)
+    """
+    statements = (
+        "ALTER TABLE bicycle ADD COLUMN IF NOT EXISTS code VARCHAR(20)",
+        "ALTER TABLE bicycle ADD COLUMN IF NOT EXISTS type VARCHAR(50)",
+        "ALTER TABLE bicycle ADD COLUMN IF NOT EXISTS model VARCHAR(100)",
+        "ALTER TABLE bicycle ADD COLUMN IF NOT EXISTS station VARCHAR(100)",
+        "ALTER TABLE bicycle ADD COLUMN IF NOT EXISTS distance VARCHAR(20)",
+        "ALTER TABLE bicycle ADD COLUMN IF NOT EXISTS tint VARCHAR(20)",
+        "ALTER TABLE bicycle ADD COLUMN IF NOT EXISTS battery INTEGER",
+        "ALTER TABLE bicycle ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE",
+        "ALTER TABLE maintenance_reports ADD COLUMN IF NOT EXISTS images JSONB",
+        "ALTER TABLE reservation_booking ADD COLUMN IF NOT EXISTS pickup_reminded_at TIMESTAMPTZ",
+        "ALTER TABLE reservation_booking ADD COLUMN IF NOT EXISTS overdue_notified_at TIMESTAMPTZ",
+    )
+    with engine.begin() as connection:
+        for statement in statements:
+            connection.execute(text(statement))
+        # seed เดิม INSERT id ตรง ๆ ไม่ขยับ sequence → ทำให้ POST /bicycles ใหม่ชน duplicate key
+        connection.execute(text(
+            "SELECT setval(pg_get_serial_sequence('bicycle', 'id'), "
+            "GREATEST(COALESCE((SELECT MAX(id) FROM bicycle), 1), 1))"
+        ))
+
 @app.on_event("startup")
 def startup():
     # ต้องสร้างตารางก่อนเสมอ ไม่งั้น migrate_reservation_booking() จะ ALTER ตารางที่ยังไม่มี
@@ -134,6 +171,18 @@ def startup():
     migrate_reservation_booking()
     migrate_user_points()
     migrate_review_rating()
+    migrate_new_columns()
     seed_bicycles()
     seed_main()
+
+
+@app.on_event("startup")
+async def start_reminder_task():
+    """เปิด background task แจ้งเตือนอัตโนมัติ (เตือนก่อนรับรถ / เลยกำหนดคืน)"""
+    await nathida_reminders.start_reminder_task()
+
+
+@app.on_event("shutdown")
+async def stop_reminder_task():
+    await nathida_reminders.stop_reminder_task()
 
