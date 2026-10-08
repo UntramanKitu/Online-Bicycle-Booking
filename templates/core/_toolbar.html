@@ -1,0 +1,16 @@
+<div class="bk-toolbar">
+    <form method="get" class="bk-search" role="search">
+        <svg class="bk-icon" aria-hidden="true"><use href="#i-search"/></svg>
+        <label class="bk-sr" for="q">Search</label>
+        <input id="q" type="search" name="q" value="{{ q }}" placeholder="{{ placeholder }}" autocomplete="off">
+        {% for name, value in hidden_params %}{% if value %}<input type="hidden" name="{{ name }}" value="{{ value }}">{% endif %}{% endfor %}
+    </form>
+    <div class="bk-pills">
+        {% for pill in pills %}
+        <a class="bk-pill{% if pill.active %} is-active{% endif %}" href="{{ pill.url }}"{% if pill.active %} aria-current="true"{% endif %}>{{ pill.label }} <small>{{ pill.count }}</small></a>
+        {% endfor %}
+        {% for chip in chips %}
+        <span class="bk-chip">{{ chip.label }}<a href="{{ chip.clear_url }}" aria-label="Clear filter"><svg class="bk-icon" aria-hidden="true"><use href="#i-x"/></svg></a></span>
+        {% endfor %}
+    </div>
+</div>

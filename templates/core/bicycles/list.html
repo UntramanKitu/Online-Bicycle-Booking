@@ -1,0 +1,57 @@
+{% extends "core/base.html" %}
+
+{% block title %}Bicycles{% endblock %}
+
+{% block content %}
+<header class="bk-head">
+    <div>
+        <h1 class="bk-title">Bicycles</h1>
+        <p class="bk-sub">{{ total }} bicycle{{ total|pluralize }} in the fleet</p>
+    </div>
+    <div class="bk-actions">
+        <a class="bk-btn bk-btn--primary" href="{% url 'bicycle_create' %}"><svg class="bk-icon" aria-hidden="true"><use href="#i-plus"/></svg>Add bicycle</a>
+    </div>
+</header>
+
+{% include "core/_toolbar.html" with placeholder="Search code, brand, model, colour or location" %}
+
+<div class="bk-panel bk-tablewrap">
+    <table class="bk-table">
+        <thead>
+            <tr>
+                <th scope="col">Bicycle</th>
+                <th scope="col">Colour</th>
+                <th scope="col">Status</th>
+                <th scope="col">Location</th>
+                <th scope="col" class="bk-num">Rides</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for row in page_obj %}
+            <tr>
+                <td class="bk-cell-head"><span class="bk-main-cell">{{ row.bike_code }}</span><span class="bk-sub-cell">{{ row.brand }} {{ row.model }}</span></td>
+                <td data-label="Colour">{{ row.color }}</td>
+                <td data-label="Status"><span class="bk-badge bk-s-{{ row.status }}">{{ row.get_status_display }}</span></td>
+                <td data-label="Location">{{ row.current_location }}</td>
+                <td data-label="Rides" class="bk-num">{{ row.total_rides|floatformat:"0g" }}</td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="5" class="bk-cell-head">
+                <div class="bk-empty">
+                    {% if filtered %}
+                    <strong>No bicycles match</strong>
+                    Try a different search or clear the filters.
+                    <div><a class="bk-btn" href="{% url 'bicycles' %}">Clear filters</a></div>
+                    {% else %}
+                    <strong>No bicycles yet</strong>
+                    Add the first bicycle to start tracking the fleet.
+                    <div><a class="bk-btn bk-btn--primary" href="{% url 'bicycle_create' %}">Add bicycle</a></div>
+                    {% endif %}
+                </div>
+            </td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% include "core/_pager.html" %}
+</div>
+{% endblock %}

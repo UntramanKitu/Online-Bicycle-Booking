@@ -1,0 +1,12 @@
+{
+  "name": "bikea-tailwind",
+  "private": true,
+  "scripts": {
+    "tw:build": "npx @tailwindcss/cli -i ./theme/src/input.css -o ./core/static/css/output.css",
+    "tw:watch": "npx @tailwindcss/cli -i ./theme/src/input.css -o ./core/static/css/output.css --watch"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.14",
+    "tailwindcss": "^4.1.14"
+  }
+}

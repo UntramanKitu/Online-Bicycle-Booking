@@ -1,0 +1,80 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#12232a">
+    <title>{% block title %}Dashboard{% endblock %} - BikeA</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230e6b66' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Ccircle cx='12' cy='12' r='2'/%3E%3Cpath d='M12 3v7M12 14v7M3 12h7M14 12h7'/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap">
+    <link rel="stylesheet" href="{% static 'css/output.css' %}">
+</head>
+<body>
+{% include "core/_icons.html" %}
+<a class="bk-skip" href="#main">Skip to content</a>
+
+<div class="bk-shell">
+    <aside class="bk-rail">
+        <a class="bk-brand" href="{% url 'dashboard' %}">
+            <svg class="bk-icon" aria-hidden="true"><use href="#i-wheel"/></svg>
+            BikeA
+        </a>
+
+        <nav class="bk-nav" aria-label="Main">
+            {% with current=request.resolver_match.url_name %}
+            <a href="{% url 'dashboard' %}"{% if current == 'dashboard' %} aria-current="page"{% endif %}>
+                <svg class="bk-icon" aria-hidden="true"><use href="#i-dashboard"/></svg><span>Dashboard</span>
+            </a>
+            <a href="{% url 'bicycles' %}"{% if current == 'bicycles' or current == 'bicycle_create' %} aria-current="page"{% endif %}>
+                <svg class="bk-icon" aria-hidden="true"><use href="#i-bike"/></svg><span>Bicycles</span>
+            </a>
+            <a href="{% url 'maintenance' %}"{% if current == 'maintenance' or current == 'maintenance_create' %} aria-current="page"{% endif %}>
+                <svg class="bk-icon" aria-hidden="true"><use href="#i-wrench"/></svg><span>Maintenance</span>
+                {% if nav_pending %}<span class="bk-nav__badge" title="{{ nav_pending }} pending">{{ nav_pending }}</span>{% endif %}
+            </a>
+            <a href="{% url 'users' %}"{% if current == 'users' or current == 'user_create' %} aria-current="page"{% endif %}>
+                <svg class="bk-icon" aria-hidden="true"><use href="#i-users"/></svg><span>Users</span>
+            </a>
+            {% endwith %}
+        </nav>
+
+        <div class="bk-rail__foot">
+            <a href="/admin/">
+                <svg class="bk-icon" aria-hidden="true"><use href="#i-shield"/></svg><span>Django admin</span>
+            </a>
+        </div>
+    </aside>
+
+    <div>
+        <div class="bk-topbar">
+            <svg class="bk-icon" aria-hidden="true"><use href="#i-wheel"/></svg>
+            BikeA
+        </div>
+
+        <main id="main" class="bk-main">
+            {% if messages %}
+            <div class="bk-toasts" role="status">
+                {% for message in messages %}
+                <div class="bk-toast{% if message.tags == 'error' %} bk-toast--error{% endif %}">
+                    <svg class="bk-icon" aria-hidden="true"><use href="#{% if message.tags == 'error' %}i-x{% else %}i-check{% endif %}"/></svg>
+                    <span>{{ message }}</span>
+                    <button type="button" data-dismiss aria-label="Dismiss"><svg class="bk-icon" aria-hidden="true" style="width:16px;height:16px"><use href="#i-x"/></svg></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll("[data-dismiss]").forEach(function (button) {
+        button.addEventListener("click", function () { button.closest(".bk-toast").remove(); });
+    });
+</script>
+</body>
+</html>

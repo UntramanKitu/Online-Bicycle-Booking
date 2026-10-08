@@ -1,0 +1,57 @@
+{% extends "core/base.html" %}
+
+{% block title %}Users{% endblock %}
+
+{% block content %}
+<header class="bk-head">
+    <div>
+        <h1 class="bk-title">Users</h1>
+        <p class="bk-sub">{{ total }} account{{ total|pluralize }}</p>
+    </div>
+    <div class="bk-actions">
+        <a class="bk-btn bk-btn--primary" href="{% url 'user_create' %}"><svg class="bk-icon" aria-hidden="true"><use href="#i-plus"/></svg>Add user</a>
+    </div>
+</header>
+
+{% include "core/_toolbar.html" with placeholder="Search name, username, email or student ID" %}
+
+<div class="bk-panel bk-tablewrap">
+    <table class="bk-table">
+        <thead>
+            <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Student ID</th>
+                <th scope="col">Faculty</th>
+                <th scope="col">Role</th>
+                <th scope="col">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for row in page_obj %}
+            <tr>
+                <td class="bk-cell-head"><span class="bk-main-cell">{{ row.first_name }} {{ row.last_name }}</span><span class="bk-sub-cell">{{ row.username }}, {{ row.email }}</span></td>
+                <td data-label="Student ID">{{ row.student_id|default:"-" }}</td>
+                <td data-label="Faculty">{{ row.faculty|default:"-" }}</td>
+                <td data-label="Role"><span class="bk-badge bk-badge--plain bk-s-{{ row.role }}">{{ row.get_role_display }}</span></td>
+                <td data-label="Status"><span class="bk-badge bk-s-{{ row.status }}">{{ row.get_status_display }}</span></td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="5" class="bk-cell-head">
+                <div class="bk-empty">
+                    {% if filtered %}
+                    <strong>No users match</strong>
+                    Try a different search or clear the filters.
+                    <div><a class="bk-btn" href="{% url 'users' %}">Clear filters</a></div>
+                    {% else %}
+                    <strong>No users yet</strong>
+                    Add students, staff and officers so they can be linked to reports.
+                    <div><a class="bk-btn bk-btn--primary" href="{% url 'user_create' %}">Add user</a></div>
+                    {% endif %}
+                </div>
+            </td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% include "core/_pager.html" %}
+</div>
+{% endblock %}

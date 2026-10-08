@@ -1,0 +1,49 @@
+{% extends "core/base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="bk-form">
+    <a class="bk-back" href="{% url 'users' %}"><svg class="bk-icon" aria-hidden="true"><use href="#i-back"/></svg>Users</a>
+    <header class="bk-head"><h1 class="bk-title">{{ title }}</h1></header>
+
+    <form method="post" class="bk-panel bk-formcard" novalidate>
+        {% csrf_token %}
+        {% if form.errors %}<p class="bk-formerrors" role="alert">Some fields need your attention. Check the highlighted fields below.</p>{% endif %}
+
+        <fieldset class="bk-fs">
+            <legend>Account</legend>
+            <div class="bk-fields">
+                {% include "core/_field.html" with field=form.username %}
+                {% include "core/_field.html" with field=form.password_hash %}
+                {% include "core/_field.html" with field=form.email wide=True %}
+            </div>
+        </fieldset>
+
+        <fieldset class="bk-fs">
+            <legend>Person</legend>
+            <div class="bk-fields">
+                {% include "core/_field.html" with field=form.first_name %}
+                {% include "core/_field.html" with field=form.last_name %}
+                {% include "core/_field.html" with field=form.student_id %}
+                {% include "core/_field.html" with field=form.phone %}
+                {% include "core/_field.html" with field=form.faculty %}
+                {% include "core/_field.html" with field=form.department %}
+            </div>
+        </fieldset>
+
+        <fieldset class="bk-fs">
+            <legend>Access</legend>
+            <div class="bk-fields">
+                {% include "core/_field.html" with field=form.role %}
+                {% include "core/_field.html" with field=form.status %}
+            </div>
+        </fieldset>
+
+        <div class="bk-formbar">
+            <button class="bk-btn bk-btn--primary" type="submit">Add user</button>
+            <a class="bk-btn" href="{% url 'users' %}">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

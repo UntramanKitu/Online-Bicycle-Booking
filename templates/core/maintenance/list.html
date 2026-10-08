@@ -1,0 +1,59 @@
+{% extends "core/base.html" %}
+
+{% block title %}Maintenance{% endblock %}
+
+{% block content %}
+<header class="bk-head">
+    <div>
+        <h1 class="bk-title">Maintenance</h1>
+        <p class="bk-sub">{{ total }} record{{ total|pluralize }}</p>
+    </div>
+    <div class="bk-actions">
+        <a class="bk-btn bk-btn--primary" href="{% url 'maintenance_create' %}"><svg class="bk-icon" aria-hidden="true"><use href="#i-plus"/></svg>Report maintenance</a>
+    </div>
+</header>
+
+{% include "core/_toolbar.html" with placeholder="Search bicycle, description or reporter" %}
+
+<div class="bk-panel bk-tablewrap">
+    <table class="bk-table">
+        <thead>
+            <tr>
+                <th scope="col">Bicycle</th>
+                <th scope="col">Work</th>
+                <th scope="col">Reported</th>
+                <th scope="col">Status</th>
+                <th scope="col" class="bk-num">Cost</th>
+                <th scope="col"><span class="bk-sr">Actions</span></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for row in page_obj %}
+            <tr>
+                <td class="bk-cell-head"><span class="bk-main-cell">{{ row.bicycle.bike_code }}</span><span class="bk-sub-cell">{{ row.bicycle.brand }} {{ row.bicycle.model }}</span></td>
+                <td data-label="Work" class="bk-clip"><span class="bk-main-cell">{{ row.get_type_display }}</span><span class="bk-sub-cell">{{ row.description|truncatechars:90 }}</span></td>
+                <td data-label="Reported" class="bk-nowrap"><span>{{ row.reported_by.first_name }} {{ row.reported_by.last_name }}</span><span class="bk-sub-cell">{{ row.created_at|date:"j M Y" }}</span></td>
+                <td data-label="Status"><span class="bk-badge bk-s-{{ row.status }}">{{ row.get_status_display }}</span></td>
+                <td data-label="Cost" class="bk-num">{% if row.cost %}฿{{ row.cost|floatformat:"2g" }}{% else %}<span class="bk-dim">-</span>{% endif %}</td>
+                <td class="bk-cell-actions">{% include "core/_maintenance_actions.html" with row=row next_url=request.get_full_path %}</td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="6" class="bk-cell-head">
+                <div class="bk-empty">
+                    {% if filtered %}
+                    <strong>No records match</strong>
+                    Try a different search or clear the filters.
+                    <div><a class="bk-btn" href="{% url 'maintenance' %}">Clear filters</a></div>
+                    {% else %}
+                    <strong>No maintenance records yet</strong>
+                    Reports will be listed here, newest first.
+                    <div><a class="bk-btn bk-btn--primary" href="{% url 'maintenance_create' %}">Report maintenance</a></div>
+                    {% endif %}
+                </div>
+            </td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% include "core/_pager.html" %}
+</div>
+{% endblock %}

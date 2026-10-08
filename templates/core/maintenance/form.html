@@ -1,0 +1,49 @@
+{% extends "core/base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="bk-form">
+    <a class="bk-back" href="{% url 'maintenance' %}"><svg class="bk-icon" aria-hidden="true"><use href="#i-back"/></svg>Maintenance</a>
+    <header class="bk-head"><h1 class="bk-title">{{ title }}</h1></header>
+
+    <form method="post" class="bk-panel bk-formcard" novalidate>
+        {% csrf_token %}
+        {% if form.errors %}<p class="bk-formerrors" role="alert">Some fields need your attention. Check the highlighted fields below.</p>{% endif %}
+
+        <fieldset class="bk-fs">
+            <legend>Bicycle and people</legend>
+            <div class="bk-fields">
+                {% include "core/_field.html" with field=form.bicycle %}
+                {% include "core/_field.html" with field=form.reported_by %}
+                {% include "core/_field.html" with field=form.assigned_to %}
+            </div>
+        </fieldset>
+
+        <fieldset class="bk-fs">
+            <legend>What needs doing</legend>
+            <div class="bk-fields">
+                {% include "core/_field.html" with field=form.type %}
+                {% include "core/_field.html" with field=form.status %}
+                {% include "core/_field.html" with field=form.description wide=True %}
+            </div>
+        </fieldset>
+
+        <fieldset class="bk-fs">
+            <legend>Work done</legend>
+            <div class="bk-fields">
+                {% include "core/_field.html" with field=form.parts_replaced wide=True %}
+                {% include "core/_field.html" with field=form.cost %}
+                <div></div>
+                {% include "core/_field.html" with field=form.start_date %}
+                {% include "core/_field.html" with field=form.end_date %}
+            </div>
+        </fieldset>
+
+        <div class="bk-formbar">
+            <button class="bk-btn bk-btn--primary" type="submit">Report maintenance</button>
+            <a class="bk-btn" href="{% url 'maintenance' %}">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

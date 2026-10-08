@@ -1,0 +1,49 @@
+{% extends "core/base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="bk-form">
+    <a class="bk-back" href="{% url 'bicycles' %}"><svg class="bk-icon" aria-hidden="true"><use href="#i-back"/></svg>Bicycles</a>
+    <header class="bk-head"><h1 class="bk-title">{{ title }}</h1></header>
+
+    <form method="post" class="bk-panel bk-formcard" novalidate>
+        {% csrf_token %}
+        {% if form.errors %}<p class="bk-formerrors" role="alert">Some fields need your attention. Check the highlighted fields below.</p>{% endif %}
+
+        <fieldset class="bk-fs">
+            <legend>Identity</legend>
+            <div class="bk-fields">
+                {% include "core/_field.html" with field=form.bike_code %}
+                {% include "core/_field.html" with field=form.frame_number %}
+                {% include "core/_field.html" with field=form.brand %}
+                {% include "core/_field.html" with field=form.model %}
+                {% include "core/_field.html" with field=form.color %}
+            </div>
+        </fieldset>
+
+        <fieldset class="bk-fs">
+            <legend>Status and location</legend>
+            <div class="bk-fields">
+                {% include "core/_field.html" with field=form.status %}
+                {% include "core/_field.html" with field=form.current_location %}
+                {% include "core/_field.html" with field=form.qr_code wide=True %}
+            </div>
+        </fieldset>
+
+        <fieldset class="bk-fs">
+            <legend>Purchase and usage</legend>
+            <div class="bk-fields">
+                {% include "core/_field.html" with field=form.purchase_date %}
+                {% include "core/_field.html" with field=form.purchase_price %}
+                {% include "core/_field.html" with field=form.total_rides %}
+            </div>
+        </fieldset>
+
+        <div class="bk-formbar">
+            <button class="bk-btn bk-btn--primary" type="submit">Add bicycle</button>
+            <a class="bk-btn" href="{% url 'bicycles' %}">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

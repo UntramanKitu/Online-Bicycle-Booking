@@ -1,0 +1,14 @@
+{# Status buttons for one maintenance record. Needs: row, next_url #}
+<div class="bk-rowactions">
+    {% if row.status == "pending" %}
+        <form class="bk-inline" method="post" action="{% url 'maintenance_update_status' row.id 'in_progress' %}">{% csrf_token %}<input type="hidden" name="next" value="{{ next_url }}"><button class="bk-btn bk-btn--sm bk-btn--primary">Start</button></form>
+        <form class="bk-inline" method="post" action="{% url 'maintenance_update_status' row.id 'completed' %}">{% csrf_token %}<input type="hidden" name="next" value="{{ next_url }}"><button class="bk-btn bk-btn--sm bk-btn--quiet">Complete</button></form>
+    {% elif row.status == "in_progress" %}
+        <form class="bk-inline" method="post" action="{% url 'maintenance_update_status' row.id 'completed' %}">{% csrf_token %}<input type="hidden" name="next" value="{{ next_url }}"><button class="bk-btn bk-btn--sm bk-btn--primary">Complete</button></form>
+    {% else %}
+        <form class="bk-inline" method="post" action="{% url 'maintenance_update_status' row.id 'in_progress' %}">{% csrf_token %}<input type="hidden" name="next" value="{{ next_url }}"><button class="bk-btn bk-btn--sm bk-btn--quiet">Reopen</button></form>
+    {% endif %}
+    {% if row.status == "pending" or row.status == "in_progress" %}
+        <form class="bk-inline" method="post" action="{% url 'maintenance_update_status' row.id 'cancelled' %}" onsubmit="return confirm('Cancel this maintenance record?');">{% csrf_token %}<input type="hidden" name="next" value="{{ next_url }}"><button class="bk-btn bk-btn--sm bk-btn--quiet bk-btn--danger">Cancel</button></form>
+    {% endif %}
+</div>

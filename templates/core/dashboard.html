@@ -1,0 +1,150 @@
+{% extends "core/base.html" %}
+{% load ui %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<header class="bk-head">
+    <div>
+        <h1 class="bk-title">Dashboard</h1>
+        <p class="bk-sub">{% now "l, j F Y" %}</p>
+    </div>
+    <div class="bk-actions">
+        <a class="bk-btn" href="{% url 'bicycle_create' %}"><svg class="bk-icon" aria-hidden="true"><use href="#i-plus"/></svg>Add bicycle</a>
+        <a class="bk-btn bk-btn--primary" href="{% url 'maintenance_create' %}"><svg class="bk-icon" aria-hidden="true"><use href="#i-wrench"/></svg>Report maintenance</a>
+    </div>
+</header>
+
+<section class="bk-hero" aria-labelledby="fleet-line">
+    {% if bicycle_count %}
+    <h2 class="bk-hero__line" id="fleet-line">
+        {{ available_bikes }} of {{ bicycle_count }} bicycle{{ bicycle_count|pluralize }} {{ available_bikes|pluralize:"is,are" }} ready to ride.
+    </h2>
+
+    <div class="bk-chain" role="list" aria-label="Every bicycle, coloured by status">
+        {% for bike in fleet %}
+        <a role="listitem" class="bk-s-{{ bike.status }}" style="--i: {{ forloop.counter0 }}"
+           href="{% url 'bicycles' %}?q={{ bike.bike_code|urlencode }}"
+           title="{{ bike.bike_code }}: {{ bike.brand }} {{ bike.model }}, {{ bike.get_status_display }}">
+            <span class="bk-sr">{{ bike.bike_code }}, {{ bike.get_status_display }}</span>
+        </a>
+        {% endfor %}
+        {% if fleet_hidden %}<span class="bk-chain__more">+{{ fleet_hidden }} more</span>{% endif %}
+    </div>
+
+    <div class="bk-legend">
+        {% for item in fleet_legend %}
+        <a class="bk-s-{{ item.value }}" href="{% url 'bicycles' %}?status={{ item.value }}">
+            <i></i><span>{{ item.label }}</span> <b>{{ item.count }}</b>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <h2 class="bk-hero__line" id="fleet-line">No bicycles in the fleet yet.</h2>
+    <p class="bk-empty-hero">Add the first bicycle and it will show up here as a link in the chain.</p>
+    <p style="margin-top:18px"><a class="bk-btn bk-btn--primary" href="{% url 'bicycle_create' %}"><svg class="bk-icon" aria-hidden="true"><use href="#i-plus"/></svg>Add bicycle</a></p>
+    {% endif %}
+</section>
+
+<div class="bk-cols">
+    <div>
+        <section class="bk-section" aria-labelledby="queue-h">
+            <div class="bk-section__head">
+                <h2 class="bk-h2" id="queue-h">Needs attention{% if open_count %}<small>{{ open_count }} open</small>{% endif %}</h2>
+                <a class="bk-more" href="{% url 'maintenance' %}">View all repairs</a>
+            </div>
+            <div class="bk-panel">
+                {% if open_maintenance %}
+                <ul class="bk-queue">
+                    {% for row in open_maintenance %}
+                    <li class="bk-s-{{ row.status }}">
+                        <span class="bk-dot" title="{{ row.get_status_display }}"></span>
+                        <div>
+                            <p class="bk-queue__title">{{ row.bicycle.bike_code }}<span>{{ row.get_type_display }}, {{ row.get_status_display|lower }}</span></p>
+                            <p class="bk-queue__desc">{{ row.description|truncatechars:110 }}</p>
+                            <p class="bk-queue__meta">Reported by {{ row.reported_by.first_name }} {{ row.reported_by.last_name }}, {{ row.created_at|age }}{% if row.created_at|age != "just now" %} ago{% endif %}</p>
+                        </div>
+                        {% include "core/_maintenance_actions.html" with row=row next_url=request.get_full_path %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="bk-empty">
+                    <strong>No open repairs</strong>
+                    New reports will show up here.
+                    <div><a class="bk-btn" href="{% url 'maintenance_create' %}">Report maintenance</a></div>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <section class="bk-section" aria-labelledby="ridden-h">
+            <div class="bk-section__head">
+                <h2 class="bk-h2" id="ridden-h">Most ridden</h2>
+                <a class="bk-more" href="{% url 'bicycles' %}">View fleet</a>
+            </div>
+            {% for bike in most_ridden %}
+            <div class="bk-ride">
+                <p class="bk-ride__name">{{ bike.bike_code }}<small>{{ bike.brand }} {{ bike.model }}</small></p>
+                <div class="bk-ride__bar" aria-hidden="true"><i style="width: {{ bike.rides_pct }}%"></i></div>
+                <p class="bk-ride__n">{{ bike.total_rides|floatformat:"0g" }}</p>
+            </div>
+            {% empty %}
+            <p class="bk-dim">Ride counts will appear here once bicycles have been used.</p>
+            {% endfor %}
+        </section>
+    </div>
+
+    <div>
+        <section class="bk-section" aria-labelledby="repairs-h">
+            <div class="bk-section__head">
+                <h2 class="bk-h2" id="repairs-h">Repairs<small>{{ maintenance_count }} total</small></h2>
+            </div>
+            {% if maintenance_count %}
+            <div class="bk-bar" role="img" aria-label="Repairs by status">
+                {% for item in repair_legend %}{% if item.count %}<span class="bk-s-{{ item.value }}" style="flex-grow: {{ item.count }}"></span>{% endif %}{% endfor %}
+            </div>
+            {% else %}
+            <div class="bk-bar bk-bar--empty" aria-hidden="true"></div>
+            {% endif %}
+            <ul class="bk-stats">
+                {% for item in repair_legend %}
+                <li class="bk-s-{{ item.value }}">
+                    <a href="{% url 'maintenance' %}?status={{ item.value }}"><i></i><span>{{ item.label }}</span></a>
+                    <b>{{ item.count }}</b>
+                </li>
+                {% endfor %}
+            </ul>
+            <p class="bk-figure"><span>Spent on completed repairs</span><b>฿{{ repair_cost|floatformat:"2g" }}</b></p>
+        </section>
+
+        <section class="bk-section" aria-labelledby="users-h">
+            <div class="bk-section__head">
+                <h2 class="bk-h2" id="users-h">Users<small>{{ user_count }} total</small></h2>
+                <a class="bk-more" href="{% url 'users' %}">View users</a>
+            </div>
+            {% if user_count %}
+            <div class="bk-bar" role="img" aria-label="Users by role">
+                {% for item in role_legend %}{% if item.count %}<span class="bk-s-{{ item.value }}" style="flex-grow: {{ item.count }}"></span>{% endif %}{% endfor %}
+            </div>
+            {% else %}
+            <div class="bk-bar bk-bar--empty" aria-hidden="true"></div>
+            {% endif %}
+            <ul class="bk-stats">
+                {% for item in role_legend %}
+                <li class="bk-s-{{ item.value }}">
+                    <a href="{% url 'users' %}?role={{ item.value }}"><i></i><span>{{ item.label }}</span></a>
+                    <b>{{ item.count }}</b>
+                </li>
+                {% endfor %}
+                {% if suspended_users %}
+                <li class="bk-s-suspended">
+                    <a href="{% url 'users' %}?status=suspended"><i></i><span>Suspended accounts</span></a>
+                    <b>{{ suspended_users }}</b>
+                </li>
+                {% endif %}
+            </ul>
+        </section>
+    </div>
+</div>
+{% endblock %}
