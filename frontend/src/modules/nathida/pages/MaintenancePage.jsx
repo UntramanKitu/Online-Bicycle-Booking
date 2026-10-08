@@ -17,7 +17,10 @@ export default function MaintenancePage() {
   const [reports, setReports] = useState([])
   const [bikes, setBikes] = useState([])
   // มุมมองของแอดมิน: mine = ของตัวเอง (default), all = รายงานแจ้งซ่อมทุกคน
-  const [scope, setScope] = useState('mine')
+  // แอดมินเข้าผ่านเมนู "?scope=all" (จัดการซ่อม) → เปิดมุมมองทุกคนตั้งแต่แรก
+  const [scope, setScope] = useState(() => (
+    isAdmin && new URLSearchParams(window.location.search).get('scope') === 'all' ? 'all' : 'mine'
+  ))
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(emptyForm())

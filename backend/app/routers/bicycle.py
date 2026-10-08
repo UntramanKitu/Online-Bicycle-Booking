@@ -15,6 +15,27 @@ from app.schemas.bicycle import (
 
 router = APIRouter()
 
+BIKE_TYPE_PREFIX = {
+    'ไฟฟ้า': 'E',
+    'ธรรมดา': 'N',
+    'พับได้': 'P',
+    'เสือภูเขา': 'T',
+}
+
+
+def _next_code_for_type(db: Session, bike_type: str) -> str:
+    """รหัสออโต้ตามประเภท: E-BIKE-001 (ไฟฟ้า) / N-BIKE-001 (ธรรมดา) / P-BIKE-001 (พับได้) / T-BIKE-001 (เสือภูเขา)"""
+    prefix = BIKE_TYPE_PREFIX.get((bike_type or '').strip(), 'N')
+    like = f'{prefix}-BIKE-%'
+    max_num = 0
+    for (code,) in db.query(Bicycle.code).filter(Bicycle.code.like(like)).all():
+        try:
+            num = int(str(code).rsplit('-', 1)[-1])
+        except (ValueError, IndexError):
+            continue
+        max_num = max(max_num, num)
+    return f'{prefix}-BIKE-{max_num + 1:03d}'
+
 BIKE_PRESENTATION = {
     1: ('ธรรมดา', 'เสือหมอบ', 'สถานีคณะวิศวะ', '80 ม.', '#e7f2ea', None),
     2: ('ไฟฟ้า', 'ไฟฟ้า E-Bike', 'สถานีหอสมุด', '150 ม.', '#e2f0e9', 82),
@@ -96,22 +117,31 @@ def create_bicycle(
     db: Session = Depends(get_db),
     _: object = Depends(require_admin),
 ):
-    """เพิ่มจักรยานใหม่ — ถ้าไม่ส่ง code จะสร้างให้เป็น BIKE-{id:03d} หลัง insert"""
-    _check_code_unique(db, payload.code)
+    """เพิ่มจักรยานใหม่ — ไม่รับ code จาก client แล้ว ระบบสร้างให้ตามประเภท (E/N/P/T-BIKE-xxx)"""
     bicycle = Bicycle(
-        code=(payload.code or '').strip() or None,
+        code=None,  # สร้างหลัง flush ตามประเภท
         type=payload.type,
         model=payload.model,
         station=payload.station,
         distance=payload.distance,
         tint=payload.tint,
-        battery=payload.battery,
+        # แบตมีเฉพาะไฟฟ้า — ประเภทอื่นบังคับ null กันข้อมูลขยะ
+        battery=payload.battery if payload.type == 'ไฟฟ้า' else None,
         is_active=True,
     )
     db.add(bicycle)
-    db.flush()  # ได้ id มาสร้าง code อัตโนมัติ
-    if not bicycle.code:
-        bicycle.code = f'BIKE-{bicycle.id:03d}'
+    db.flush()  # ได้ id ก่อน (เผื่อ fallback ตอนชน)
+    bicycle.code = _next_code_for_type(db, payload.type)
+    # กันชนกรณีแข่งกันสร้างพร้อมกัน — ถ้าชนให้เลื่อนเลขไปเรื่อย ๆ
+    for _ in range(10):
+        try:
+            db.flush()
+            break
+        except IntegrityError:
+            db.rollback()
+            db.add(bicycle)
+            num = int(bicycle.code.rsplit('-', 1)[-1]) + 1
+            bicycle.code = f"{bicycle.code.rsplit('-', 1)[0]}-{num:03d}"
     db.commit()
     db.refresh(bicycle)
     return _to_response(db, bicycle, set())

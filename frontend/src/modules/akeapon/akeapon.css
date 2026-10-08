@@ -3,6 +3,7 @@
   display: inline-flex; align-items: center; gap: 6px;
   font-size: 15px; color: var(--text-muted); cursor: pointer;
   margin-top: 6px;
+  
 }
 .fav-btn {
   position: absolute; top: 8px; right: 8px; z-index: 1;
@@ -13,6 +14,15 @@
 }
 .fav-btn:hover { transform: scale(1.1); }
 .fav-btn.on { color: var(--danger); }
+.fav-btn:disabled { opacity: .6; cursor: default; transform: none; }
+
+/* ฟอร์มแก้ชื่อเรียกรายการโปรด */
+.fav-rename-form { display: grid; gap: 8px; margin: 8px 0 4px; }
+.fav-rename-form input {
+  width: 100%; padding: 8px 10px; font-size: 14px;
+  border: 1px solid var(--border); border-radius: 8px; background: var(--bg);
+}
+.fav-rename-actions { display: flex; gap: 8px; }
 
 /* ---------- ระบบคะแนนและบทลงโทษ (mock) ---------- */
 .status-pill.warn { background: rgba(232,161,0,.18); color: #9a6d00; }

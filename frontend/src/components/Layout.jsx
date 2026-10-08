@@ -1,33 +1,56 @@
 import { useEffect, useRef, useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useCurrentUser } from '../context/currentUser'
 import { formatDateTime } from '../utils'
 import { api } from '../api'
 
 const navItems = [
   { to: '/', label: '🏠 หน้าหลัก' },
-  { to: '/bookings', label: 'การจองจักรยาน' },
-  { to: '/group-rides', label: 'กลุ่มปั่นร่วมกัน' },
-  { to: '/support', label: 'แจ้งปัญหา' },
-  { to: '/maintenance', label: 'แจ้งซ่อม' },
-  { to: '/reviews', label: 'รีวิว & คะแนน' },
-  { to: '/notifications', label: 'การแจ้งเตือน' },
-  { to: '/scores', label: 'คะแนน & บทลงโทษ' },
-  { to: '/favorites', label: 'รายการโปรด' },
-  { to: '/lost-items', label: 'ของหาย' },
+  { to: '/bookings', label: '🚲 จอง' },
+  { to: '/group-rides', label: '👥 ปั่นกลุ่ม' },
+  // ของหาย = หน้าระบบ (ทุกคนเห็นของทั้งหมด) — ของตัวเองดู/แจ้งที่แท็บ 🎒 ในโปรไฟล์
+  { to: '/lost-items', label: '🎒 ของหาย' },
 ]
 
 const adminNavItems = [
-  { to: '/admin', label: '🛡️ จัดการผู้ใช้' },
-  { to: '/admin/bikes', label: '🚲 จัดการจักรยาน' },
+  { to: '/admin', label: '🛡️ จัดการผู้ใช้', end: true },
+  { to: '/admin/bikes', label: '🚲 จัดการจักรยาน', end: true },
+  { to: '/support?scope=all', label: '🎫 จัดการปัญหา', end: true },
+  { to: '/maintenance?scope=all', label: '🔧 จัดการซ่อม', end: true },
 ]
+
+// เมนูฝั่ง sidebar ที่ใช้แทนเมนูหลักเมื่อผู้ใช้อยู่ที่ /profile (tab ผูกกับ ?tab=)
+// = ศูนย์รวมฟีเจอร์ที่ต้องใช้ทั้งหมดของโปรไฟล์ ป้ายสั้น อ่านง่าย
+const profileNavItems = [
+  { tab: 'info', label: '👤 ข้อมูลของฉัน' },
+  { tab: 'edit', label: '✏️ แก้ไขชื่อ' },
+  { tab: 'tickets', label: '🎫 แจ้งปัญหา' },
+  { tab: 'favorites', label: '♥ รายการโปรด' },
+  { tab: 'maintenance', label: '🔧 แจ้งซ่อม' },
+  { tab: 'reviews', label: '⭐ รีวิว' },
+  { tab: 'scores', label: '🏆 คะแนน' },
+  { tab: 'lost', label: '🎒 ของหาย' },
+]
+
+
 
 export default function Layout() {
   const { currentUser, isAdmin, notifications, unreadCount, refreshNotifications, markNotificationRead, clearReadNotifications } = useCurrentUser()
   const navigate = useNavigate()
+  const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [bellOpen, setBellOpen] = useState(false)
   const bellRef = useRef(null)
+
+  // อยู่หน้าโปรไฟล์ → sidebar แสดงเมนูโปรไฟล์แทนเมนูหลัก (tab ปัจจุบันอ่านจาก ?tab=)
+  const isProfilePage = location.pathname === '/profile'
+  const activeProfileTab = new URLSearchParams(location.search).get('tab') || 'info'
+  // อยู่ในโซนหน้าจัดการ (/admin, จัดการปัญหา/ซ่อม ของแอดมิน) → sidebar แสดงเมนูแอดมิน
+  const isAdminSection = isAdmin && (
+    location.pathname.startsWith('/admin')
+    || location.pathname === '/support'
+    || location.pathname === '/maintenance'
+  )
 
   const displayName = currentUser?.full_name || currentUser?.username || 'ผู้ใช้'
   const readCount = Math.max(0, notifications.length - unreadCount)
@@ -49,10 +72,10 @@ export default function Layout() {
           <button className="menu-button" type="button" aria-label="เปิดเมนู" onClick={() => setSidebarOpen((open) => !open)}>
             <span />
           </button>
-          <div className="brand" aria-label="Brand">
-            <span className="brand-mark" aria-hidden="true">⌁</span>
-            <span className="brand-text">BikeShare</span>
-          </div>
+            <Link className="brand brand-link" to="/" aria-label="กลับหน้าหลัก">
+              <span className="brand-mark" aria-hidden="true">⌁</span>
+              <span className="brand-text">BikeShare</span>
+            </Link>
           <div className="user-picker reference-user">
             <div className="bell-wrap" ref={bellRef}>
               <button
@@ -111,26 +134,67 @@ export default function Layout() {
 
       <div className="reference-layout">
         <aside className={`reference-sidebar ${sidebarOpen ? '' : 'hidden'}`}>
-          <div className="welcome">
+          <Link className="welcome welcome-link" to="/profile" title="เปิดโปรไฟล์ของฉัน">
             ยินดีต้อนรับ<br /><strong>{displayName}</strong><br />
             <span className={`badge ${isAdmin ? 'badge-admin' : 'badge-user'}`}>
               {isAdmin ? 'แอดมิน — เห็นทุกอย่าง' : 'ผู้ใช้ทั่วไป'}
             </span>
-          </div>
+            <span className="welcome-hint">เปิดโปรไฟล์ ›</span>
+          </Link>
           <nav className="sidebar-nav">
-            {navItems.map((item) => (
-              <NavLink key={item.to} to={item.to} className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
-                {item.label}
-              </NavLink>
-            ))}
-            {isAdmin && (
+            {isProfilePage ? (
               <>
-                <div className="sidebar-nav-divider"><span>แอดมิน</span></div>
+                <div className="sidebar-nav-divider"><span>เมนูโปรไฟล์</span></div>
+                {profileNavItems.map((item) => (
+                  <Link
+                    key={item.tab}
+                    to={`/profile?tab=${item.tab}`}
+                    className={`nav-item ${activeProfileTab === item.tab ? 'active' : ''}`}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+                <div className="sidebar-nav-divider"><span>เมนูหลัก</span></div>
+                <NavLink to="/" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
+                  🏠 กลับหน้าหลัก
+                </NavLink>
+              </>
+            ) : isAdminSection ? (
+              <>
+                <div className="sidebar-nav-divider"><span>เมนูแอดมิน</span></div>
                 {adminNavItems.map((item) => (
-                  <NavLink key={item.to} to={item.to} className={({ isActive }) => (isActive ? 'nav-item nav-item-admin active' : 'nav-item nav-item-admin')}>
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.end}
+                    className={({ isActive }) => (isActive ? 'nav-item nav-item-admin active' : 'nav-item nav-item-admin')}
+                  >
                     {item.label}
                   </NavLink>
                 ))}
+                <div className="sidebar-nav-divider"><span>เมนูอื่น</span></div>
+                <NavLink to="/" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
+                  🏠 กลับหน้าหลัก
+                </NavLink>
+              </>
+            ) : (
+              <>
+                {navItems.map((item) => (
+                  <NavLink key={item.to} to={item.to} className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
+                    {item.label}
+                  </NavLink>
+                ))}
+                {isAdmin && (
+                  <>
+                    <div className="sidebar-nav-divider"><span>แอดมิน</span></div>
+                    <NavLink
+                      to="/admin"
+                      className={({ isActive }) => (isActive ? 'nav-item nav-item-admin active' : 'nav-item nav-item-admin')}
+                    >
+                      🛡️ หน้าแอดมิน
+                    </NavLink>
+                  </>
+                )}
               </>
             )}
           </nav>

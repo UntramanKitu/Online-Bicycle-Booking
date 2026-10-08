@@ -1,9 +1,9 @@
 import '../akeapon.css'
 
-// mock: กรองเฉพาะรายการโปรด (localStorage) — ยังไม่เชื่อม backend
+// กรองเฉพาะรายการโปรด (นับจาก backend)
 export default function FavoritesFilter({ count, checked, onChange }) {
   return (
-    <label className="fav-filter" title="ต้นแบบ — ยังไม่เชื่อมเซิร์ฟเวอร์">
+    <label className="fav-filter" title="แสดงเฉพาะจักรยานในรายการโปรด">
       <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
       ★ เฉพาะรายการโปรด ({count})
     </label>

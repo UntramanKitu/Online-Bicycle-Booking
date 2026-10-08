@@ -52,6 +52,13 @@ def create_favorite(data: FavoriteCreate, db: Session = Depends(get_db)):
     if data.bicycle_id is not None:
         bike = resolve_bicycle(int(data.bicycle_id), db)
         payload["bicycle_id"] = bike.id
+        # กันกดหัวใจซ้ำ — ถ้ามีอยู่แล้วคืนรายการเดิม (idempotent)
+        existing = db.query(Favorite).filter(
+            Favorite.user_id == user.id,
+            Favorite.bicycle_id == bike.id,
+        ).first()
+        if existing:
+            return existing
     record = Favorite(**payload)
     db.add(record)
     db.commit()

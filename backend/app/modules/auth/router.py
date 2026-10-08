@@ -8,6 +8,7 @@ import httpx
 import jwt
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal, get_db
@@ -147,35 +148,47 @@ async def google_callback(
             "email": user.email,
             "exp": datetime.now(timezone.utc) + timedelta(days=7),
         }, config("JWT_SECRET") or "development-only-secret", algorithm="HS256")
+        # เก็บ role ก่อนปิด db — แอดมินเข้าหน้า /admin ตรง ๆ ส่วนผู้ใช้ทั่วไปไปหน้าหลัก
+        role = resolve_role(user)
     finally:
         db.close()
 
-    response = RedirectResponse(frontend_url("/"))
+    landing = "/admin" if role == "admin" else "/"
+    response = RedirectResponse(frontend_url(landing))
     response.delete_cookie(OAUTH_STATE_COOKIE)
     response.set_cookie(ACCESS_TOKEN_COOKIE, session, httponly=True, max_age=604800, samesite="lax", secure=False)
     return response
 
 
-@router.get("/me")
-def current_user(
-    access_token: str | None = Cookie(default=None, alias=ACCESS_TOKEN_COOKIE),
-    db: Session = Depends(get_db),
-):
+class ProfileUpdate(BaseModel):
+    """แก้ไขชื่อโปรไฟล์จากหน้า /profile — ส่งเฉพาะช่องที่อยากแก้"""
+
+    first_name: str | None = Field(None, max_length=150)
+    last_name: str | None = Field(None, max_length=150)
+
+
+def _user_from_cookie(
+    access_token: str | None,
+    db: Session,
+) -> UnifiedUser | None:
+    """อ่าน cookie bikea_access_token → คืน user ที่ยัง active (ไม่พบ/หมดอายุ = None)"""
     if not access_token:
-        return {"authenticated": False, "user": None}
+        return None
     try:
         payload = jwt.decode(access_token, config("JWT_SECRET") or "development-only-secret", algorithms=["HS256"])
-    except jwt.PyJWTError:
-        return {"authenticated": False, "user": None}
-    try:
         user_id = int(payload["sub"])
-    except (KeyError, TypeError, ValueError):
-        return {"authenticated": False, "user": None}
+    except (jwt.PyJWTError, KeyError, TypeError, ValueError):
+        return None
     user = db.get(UnifiedUser, user_id)
     if user is None or not user.is_active:
-        return {"authenticated": False, "user": None}
+        return None
+    return user
+
+
+def _me_user_payload(user: UnifiedUser) -> dict:
+    """รูปข้อมูลผู้ใช้ที่ /auth/me คืนให้ frontend (ใช้ซ้ำทั้ง GET และ PATCH)"""
     full_name = f"{user.first_name or ''} {user.last_name or ''}".strip() or user.username
-    return {"authenticated": True, "user": {
+    return {
         "id": user.id,
         "username": user.username,
         "email": user.email,
@@ -185,7 +198,38 @@ def current_user(
         "role": resolve_role(user),
         "status": "active" if user.is_active else "inactive",
         "points": user.points,
-    }}
+        "date_joined": user.date_joined.isoformat() if user.date_joined else None,
+    }
+
+
+@router.get("/me")
+def current_user(
+    access_token: str | None = Cookie(default=None, alias=ACCESS_TOKEN_COOKIE),
+    db: Session = Depends(get_db),
+):
+    user = _user_from_cookie(access_token, db)
+    if user is None:
+        return {"authenticated": False, "user": None}
+    return {"authenticated": True, "user": _me_user_payload(user)}
+
+
+@router.patch("/me")
+def update_profile(
+    payload: ProfileUpdate,
+    access_token: str | None = Cookie(default=None, alias=ACCESS_TOKEN_COOKIE),
+    db: Session = Depends(get_db),
+):
+    """แก้ชื่อ/นามสกุลของตัวเองจากหน้าโปรไฟล์ — ต้องล็อกอิน (cookie) เท่านั้น"""
+    user = _user_from_cookie(access_token, db)
+    if user is None:
+        raise HTTPException(status_code=401, detail="กรุณาเข้าสู่ระบบก่อนแก้ไขโปรไฟล์")
+    if payload.first_name is not None:
+        user.first_name = payload.first_name.strip()
+    if payload.last_name is not None:
+        user.last_name = payload.last_name.strip()
+    db.commit()
+    db.refresh(user)
+    return {"authenticated": True, "user": _me_user_payload(user)}
 
 
 @router.post("/logout")

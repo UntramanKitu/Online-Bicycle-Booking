@@ -1,17 +1,18 @@
 import '../akeapon.css'
 
-// mock: ปุ่มรายการโปรด (localStorage) — ยังไม่เชื่อม backend
-export default function FavoriteButton({ active, onToggle }) {
+// ปุ่มรายการโปรด (เชื่อม backend) — กดแล้วบันทึกทันที ไม่ต้องไปหน้าอื่น
+export default function FavoriteButton({ active, onToggle, busy }) {
   return (
     <button
       type="button"
       className={`fav-btn ${active ? 'on' : ''}`}
       onClick={onToggle}
-      title="รายการโปรด (ต้นแบบ)"
-      aria-label="รายการโปรด"
+      disabled={busy}
+      title={active ? 'เอาออกจากรายการโปรด' : 'เพิ่มในรายการโปรด'}
+      aria-label={active ? 'เอาออกจากรายการโปรด' : 'เพิ่มในรายการโปรด'}
       aria-pressed={active}
     >
-      {active ? '♥' : '♡'}
+      {busy ? '…' : active ? '♥' : '♡'}
     </button>
   )
 }

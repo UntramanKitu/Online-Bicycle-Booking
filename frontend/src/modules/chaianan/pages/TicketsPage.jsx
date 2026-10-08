@@ -30,7 +30,10 @@ const STATUS_LABELS = {
 export default function TicketsPage() {
   const { userId, currentUser, usersLoading, isAdmin, getUserName } = useCurrentUser()
   const [tickets, setTickets] = useState([])
-  const [scope, setScope] = useState('mine')
+  // แอดมินเข้าผ่านเมนู "?scope=all" (จัดการปัญหา) → เปิดมุมมองทุกคนตั้งแต่แรก
+  const [scope, setScope] = useState(() => (
+    isAdmin && new URLSearchParams(window.location.search).get('scope') === 'all' ? 'all' : 'mine'
+  ))
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(emptyForm())

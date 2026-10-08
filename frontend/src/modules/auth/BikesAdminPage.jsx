@@ -6,6 +6,9 @@ const emptyForm = () => ({ code: '', type: 'ธรรมดา', model: '', stat
 
 const TYPE_OPTIONS = ['ธรรมดา', 'ไฟฟ้า', 'พับได้', 'เสือภูเขา']
 
+/** prefix รหัสออโต้ตามประเภท (ตรงกับ backend: E/N/P/T-BIKE-xxx) */
+const TYPE_CODE_PREFIX = { ธรรมดา: 'N', ไฟฟ้า: 'E', พับได้: 'P', เสือภูเขา: 'T' }
+
 /** หน้าแอดมิน: เพิ่ม / แก้ไข / เปิด-ปิดใช้ / ลบ จักรยาน (M02) */
 export default function BikesAdminPage() {
   const { currentUser, usersLoading } = useCurrentUser()
@@ -67,13 +70,14 @@ export default function BikesAdminPage() {
     setSaving(true)
     setMessage(null)
     const payload = {
-      code: form.code.trim() || null,
       type: form.type,
       model: form.model.trim(),
       station: form.station.trim(),
       distance: form.distance.trim() || '-',
-      battery: form.battery === '' ? null : Number(form.battery),
+      // แบตเตอรี่มีเฉพาะจักรยานไฟฟ้า — ประเภทอื่นส่ง null
+      battery: form.type === 'ไฟฟ้า' && form.battery !== '' ? Number(form.battery) : null,
     }
+    if (editingId) payload.code = form.code.trim() || null // เพิ่มใหม่ไม่ส่ง code — backend สร้างให้ตามประเภท
     try {
       if (editingId) {
         await api.put(`/bicycles/${editingId}`, payload)
@@ -170,13 +174,27 @@ export default function BikesAdminPage() {
         <form className="panel form-grid" onSubmit={handleSubmit}>
           <div className="field">
             <label htmlFor="bike-code">รหัสจักรยาน</label>
-            <input
-              id="bike-code"
-              maxLength={20}
-              placeholder="เช่น BIKE-009 (เว้นว่างให้ระบบสร้างให้)"
-              value={form.code}
-              onChange={(e) => setForm({ ...form, code: e.target.value })}
-            />
+            {editingId ? (
+              <input
+                id="bike-code"
+                maxLength={20}
+                placeholder="เช่น N-BIKE-001"
+                value={form.code}
+                onChange={(e) => setForm({ ...form, code: e.target.value })}
+              />
+            ) : (
+              <>
+                <input
+                  id="bike-code"
+                  value={`${TYPE_CODE_PREFIX[form.type] || 'N'}-BIKE-xxx`}
+                  readOnly
+                  aria-describedby="bike-code-hint"
+                />
+                <p id="bike-code-hint" className="muted small">
+                  ระบบสร้างรหัสให้อัตโนมัติตามประเภท (prefix {TYPE_CODE_PREFIX[form.type] || 'N'}) — ไม่ต้องกรอก
+                </p>
+              </>
+            )}
           </div>
           <div className="field">
             <label htmlFor="bike-type">ประเภท *</label>
@@ -216,18 +234,20 @@ export default function BikesAdminPage() {
               onChange={(e) => setForm({ ...form, distance: e.target.value })}
             />
           </div>
-          <div className="field">
-            <label htmlFor="bike-battery">แบตเตอรี่ (%)</label>
-            <input
-              id="bike-battery"
-              type="number"
-              min={0}
-              max={100}
-              placeholder="เว้นว่างถ้าไม่ใช้ไฟฟ้า"
-              value={form.battery}
-              onChange={(e) => setForm({ ...form, battery: e.target.value })}
-            />
-          </div>
+          {form.type === 'ไฟฟ้า' && (
+            <div className="field">
+              <label htmlFor="bike-battery">แบตเตอรี่ (%)</label>
+              <input
+                id="bike-battery"
+                type="number"
+                min={0}
+                max={100}
+                placeholder="เช่น 80"
+                value={form.battery}
+                onChange={(e) => setForm({ ...form, battery: e.target.value })}
+              />
+            </div>
+          )}
           <div className="form-actions">
             <button className="btn btn-primary" disabled={saving}>
               {saving ? 'กำลังบันทึก...' : editingId ? 'บันทึกการแก้ไข' : 'เพิ่มจักรยาน'}

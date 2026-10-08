@@ -95,6 +95,18 @@ export function CurrentUserProvider({ children }) {
     }
   }
 
+  // โหลดข้อมูลตัวเองใหม่จาก /auth/me — ใช้ตอนแก้โปรไฟล์ให้ชื่อใหม่แทนที่ทันที
+  const refreshUser = async () => {
+    try {
+      const res = await api.get('/auth/me')
+      setCurrentUser(res.data?.authenticated && res.data?.user ? res.data.user : null)
+      return res.data?.user ?? null
+    } catch {
+      setCurrentUser(null)
+      return null
+    }
+  }
+
   // แปลง user_id เป็นชื่อจริงจาก /api/users — ไม่พบค่อย fallback เป็น "ผู้ใช้ #id"
   const getUserName = (id) => {
     if (id == null) return '-'
@@ -106,7 +118,7 @@ export function CurrentUserProvider({ children }) {
 
   return (
     <CurrentUserContext.Provider
-      value={{ userId, users, usersLoading, currentUser, isAdmin, getUserName, notifications, unreadCount, refreshNotifications, markNotificationRead, clearReadNotifications }}
+      value={{ userId, users, usersLoading, currentUser, isAdmin, getUserName, notifications, unreadCount, refreshNotifications, markNotificationRead, clearReadNotifications, refreshUser }}
     >
       {children}
     </CurrentUserContext.Provider>

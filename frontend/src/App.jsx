@@ -10,6 +10,7 @@ import NotificationsPage from './modules/nathida/pages/NotificationsPage'
 import MaintenancePage from './modules/nathida/pages/MaintenancePage'
 import ReviewsPage from './modules/nathida/pages/ReviewsPage'
 import LoginPage from './modules/auth/LoginPage'
+import ProfilePage from './modules/auth/ProfilePage'
 import ScoresPage from './modules/akeapon/pages/ScoresPage'
 import FavoritesPage from './modules/akeapon/pages/FavoritesPage'
 import LostItemsPage from './modules/akeapon/pages/LostItemsPage'
@@ -52,6 +53,7 @@ export default function App() {
             <Route path="scores" element={<ScoresPage />} />
             <Route path="favorites" element={<FavoritesPage />} />
             <Route path="lost-items" element={<LostItemsPage />} />
+            <Route path="profile" element={<ProfilePage />} />
             {/* Admin-only routes */}
             <Route
               path="admin"

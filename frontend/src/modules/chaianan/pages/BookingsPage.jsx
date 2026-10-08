@@ -5,9 +5,8 @@ import { BOOKING_STATUSES } from '../../../constants'
 import { useCurrentUser } from '../../../context/currentUser'
 import Stars from '../../../components/Stars'
 import { Time24 } from '../../../components/Time24'
-// ฟีเจอร์ mock (รายการโปรด / แจ้งของหาย) — แยกออกมาเป็น modules/akeapon (ยังไม่เชื่อม backend)
+// รายการโปรด + แจ้งของหาย เชื่อม backend แล้ว (ของหายใช้ `/api/lost-items` ร่วมกับแท็บโปรไฟล์)
 import { useFavorites } from '../../akeapon/favorites'
-import { useLostItems } from '../../akeapon/lostItems'
 import FavoriteButton from '../../akeapon/components/FavoriteButton'
 import FavoritesFilter from '../../akeapon/components/FavoritesFilter'
 import LostItemModal from '../../akeapon/components/LostItemModal'
@@ -67,9 +66,22 @@ export default function BookingsPage() {
   const [editDuration, setEditDuration] = useState('60')
   const [editError, setEditError] = useState(null)
   const [editSaving, setEditSaving] = useState(false)
-  // mock: รายการโปรด + แจ้งของหาย — แยก logic ไว้ที่ modules/akeapon (localStorage ยังไม่เชื่อม backend)
-  const { favorites, favOnly, setFavOnly, toggleFavorite } = useFavorites()
-  const { lostItems, lostFor, openLost, closeLost, saveLostItem } = useLostItems()
+  // รายการโปรดเชื่อม backend `/api/favorites` จริง — ใช้ userId เดียวกับหน้ารายการโปรด
+  const { favorites, favOnly, setFavOnly, toggleFavorite, favBusyId } = useFavorites(userId)
+  // แจ้งของหาย — เชื่อม backend `/api/lost-items` จริง (รายการเดียวกับแท็บ 🎒 ของหายในโปรไฟล์)
+  const [lostItems, setLostItems] = useState([])
+  const [lostFor, setLostFor] = useState(null)
+  const openLost = (booking) => setLostFor(booking)
+  const closeLost = () => setLostFor(null)
+
+  async function loadLost() {
+    try {
+      const res = await api.get(`/lost-items/user/${userId}`)
+      setLostItems(Array.isArray(res.data) ? res.data : [])
+    } catch {
+      // โหลดไม่ได้ไม่ให้พังหน้าจอง — แสดงรายการเปล่า
+    }
+  }
 
   async function load(nextScope = scope) {
     setLoading(true)
@@ -91,7 +103,7 @@ export default function BookingsPage() {
 
   useEffect(() => {
     if (usersLoading || !userId) return
-    const timer = window.setTimeout(() => load(scope), 0)
+    const timer = window.setTimeout(() => { load(scope); loadLost() }, 0)
     return () => window.clearTimeout(timer)
   }, [userId, usersLoading, scope]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -131,10 +143,24 @@ export default function BookingsPage() {
     return () => window.clearInterval(timer)
   }, [myBookings])
 
-  // mock: บันทึกการแจ้งของหาย (modules/akeapon — localStorage ยังไม่เชื่อม backend)
-  function handleLostSaved(entry) {
-    saveLostItem(entry)
-    setMessage({ type: 'success', text: 'บันทึกการแจ้งของหายแล้ว (ข้อมูลจำลอง — ยังไม่ส่งเข้าระบบจริง)' })
+  // บันทึกการแจ้งของหาย — POST /lost-items จริง (ผูกจักรยานจากการจอง) แล้วรีเฟรชรายการเดียวกับแท็บโปรไฟล์
+  async function handleLostSaved(entry) {
+    setMessage(null)
+    try {
+      await api.post('/lost-items', {
+        user_id: userId,
+        bicycle_id: entry.bicycle_id ?? null,
+        item_name: entry.item_name,
+        location: entry.location || null,
+        description: entry.description || null,
+        status: 'lost',
+      })
+      setMessage({ type: 'success', text: 'บันทึกการแจ้งของหายเรียบร้อย ✓ (จัดการต่อได้ที่แท็บ 🎒 ของหายในโปรไฟล์)' })
+      closeLost()
+      await loadLost()
+    } catch (err) {
+      setMessage({ type: 'error', text: getApiError(err) })
+    }
   }
 
   async function updateBookingState(id, action) {
@@ -372,7 +398,7 @@ export default function BookingsPage() {
       <div className="booking-heading">
         <h1>เลือกจักรยานที่ต้องการ</h1>
         <p>เลือกคันที่ว่างใกล้คุณ แล้วยืนยันการจองได้ทันที</p>
-        {/* mock: กรองรายการโปรด — modules/akeapon (ยังไม่เชื่อม backend) */}
+        {/* กรองเฉพาะรายการโปรด (เชื่อม backend แล้ว) */}
         <FavoritesFilter count={favorites.length} checked={favOnly} onChange={setFavOnly} />
         {/* M10: ค้นหา + เรียงตามระยะทาง */}
         <div className="bike-search-bar">
@@ -407,8 +433,8 @@ export default function BookingsPage() {
             return <article className={`bike-card ${available ? '' : 'disabled'}`} key={bike.id}>
               <div className="bike-thumb" style={{ background: bike.tint }}>
                 {bike.type === 'ไฟฟ้า' && <span className="bike-tag">ไฟฟ้า</span>}
-                {/* mock: ปุ่มรายการโปรด — modules/akeapon (ยังไม่เชื่อม backend) */}
-                <FavoriteButton active={favorites.includes(bike.id)} onToggle={() => toggleFavorite(bike.id)} />
+                {/* ปุ่มรายการโปรด (backend) — กดแล้วบันทึกทันที ดูทั้งหมดที่เมนู “รายการโปรด” */}
+                <FavoriteButton active={favorites.includes(bike.id)} busy={favBusyId === bike.id} onToggle={() => toggleFavorite(bike.id)} />
                 <BikeIcon />
               </div>
               <div className="bike-body">
@@ -485,7 +511,7 @@ export default function BookingsPage() {
                   {isAdmin && booking.status === 'pending' && <button className="btn btn-primary btn-sm" onClick={() => updateBookingState(booking.id, 'confirm')}>ยืนยัน</button>}
                   {/* แจ้งปัญหา — ใช้ได้ตั้งแต่รับรถแล้ว (in_progress) จนถึงหลังคืนรถ (completed) */}
                   {isMine && ['in_progress', 'completed'].includes(booking.status) && <button className="btn btn-ghost btn-sm" onClick={() => openReport(booking)}>แจ้งปัญหา</button>}
-                  {/* แจ้งของหาย — modules/akeapon (mock localStorage ยังไม่เชื่อม backend) */}
+                  {/* แจ้งของหาย — POST /lost-items จริง (เดียวกับแท็บโปรไฟล์) */}
                   {isMine && ['in_progress', 'completed'].includes(booking.status) && <button className="btn btn-ghost btn-sm" onClick={() => openLost(booking)}>แจ้งของหาย</button>}
                 </div>
               )}
@@ -493,7 +519,7 @@ export default function BookingsPage() {
           )
         })}
       </section>
-      {/* mock: ประวัติการแจ้งของหาย — modules/akeapon (localStorage ยังไม่เชื่อม backend) */}
+      {/* ประวัติการแจ้งของหาย — ข้อมูลจริงจาก backend (ลิงก์ไปแท็บโปรไฟล์ด้วย) */}
       <LostItemHistory items={lostItems} getBikeName={getBikeName} />
       {lostFor && (
         <LostItemModal

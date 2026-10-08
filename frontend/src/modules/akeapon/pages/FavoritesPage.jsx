@@ -10,10 +10,10 @@ export default function FavoritesPage() {
   const [favorites, setFavorites] = useState([])
   const [bikes, setBikes] = useState([])
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState(null)
-  const [bikeId, setBikeId] = useState('')
-  const [nickname, setNickname] = useState('')
+  const [editingId, setEditingId] = useState(null)
+  const [editName, setEditName] = useState('')
+  const [editSaving, setEditSaving] = useState(false)
 
   async function load() {
     setLoading(true)
@@ -39,31 +39,6 @@ export default function FavoritesPage() {
   }, [userId, usersLoading]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const bikeById = useMemo(() => new Map(bikes.map((b) => [b.id, b])), [bikes])
-  const favoritedIds = useMemo(() => new Set(favorites.map((f) => f.bicycle_id)), [favorites])
-  const availableBikes = bikes.filter((b) => !favoritedIds.has(b.id))
-
-  async function handleAdd(e) {
-    e.preventDefault()
-    if (!bikeId) return
-    setSaving(true)
-    setMessage(null)
-    try {
-      await api.post('/favorites', {
-        user_id: userId,
-        target_type: 'bicycle',
-        bicycle_id: Number(bikeId),
-        nickname: nickname.trim() || null,
-      })
-      setMessage({ type: 'success', text: 'เพิ่มรายการโปรดแล้ว ♥' })
-      setBikeId('')
-      setNickname('')
-      load()
-    } catch (err) {
-      setMessage({ type: 'error', text: getApiError(err) })
-    } finally {
-      setSaving(false)
-    }
-  }
 
   async function handleRemove(id) {
     setMessage(null)
@@ -72,6 +47,35 @@ export default function FavoritesPage() {
       setFavorites((prev) => prev.filter((f) => f.id !== id))
     } catch (err) {
       setMessage({ type: 'error', text: getApiError(err) })
+    }
+  }
+
+  function startEdit(fav) {
+    setMessage(null)
+    setEditingId(fav.id)
+    setEditName(fav.nickname || '')
+  }
+
+  function cancelEdit() {
+    setEditingId(null)
+    setEditName('')
+  }
+
+  async function handleRename(e) {
+    e.preventDefault()
+    if (!editingId) return
+    const name = editName.trim()
+    setEditSaving(true)
+    setMessage(null)
+    try {
+      const res = await api.put(`/favorites/${editingId}`, { nickname: name || null })
+      setFavorites((prev) => prev.map((f) => (f.id === editingId ? res.data : f)))
+      setMessage({ type: 'success', text: name ? 'แก้ชื่อแล้ว ✓' : 'ล้างชื่อแล้ว ✓' })
+      cancelEdit()
+    } catch (err) {
+      setMessage({ type: 'error', text: getApiError(err) })
+    } finally {
+      setEditSaving(false)
     }
   }
 
@@ -94,43 +98,10 @@ export default function FavoritesPage() {
         </div>
       )}
 
-      <form className="ticket-card fav-add-form" onSubmit={handleAdd}>
-        <header>เพิ่มจักรยานโปรด</header>
-        <div className="field">
-          <label htmlFor="fav-bike">เลือกจักรยาน</label>
-          <select
-            id="fav-bike"
-            value={bikeId}
-            onChange={(e) => setBikeId(e.target.value)}
-            required
-          >
-            <option value="">— เลือกจักรยาน —</option>
-            {availableBikes.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.code} · {b.model} · {b.station}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="field">
-          <label htmlFor="fav-nick">ชื่อเรียก (ไม่บังคับ)</label>
-          <input
-            id="fav-nick"
-            value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
-            placeholder="เช่น คันประจำ, คันเร็ว"
-            maxLength={100}
-          />
-        </div>
-        <button className="btn btn-primary" type="submit" disabled={saving || !bikeId}>
-          {saving ? 'กำลังบันทึก...' : '♥ เพิ่มรายการโปรด'}
-        </button>
-      </form>
-
       {loading ? (
         <p className="empty">กำลังโหลดรายการโปรด...</p>
       ) : favorites.length === 0 ? (
-        <p className="empty">ยังไม่มีจักรยานในรายการโปรด — เลือกด้านบนแล้วกดเพิ่มได้เลย</p>
+        <p className="empty">ยังไม่มีจักรยานในรายการโปรด — กด ♡ ที่หน้าจองจักรยานเพื่อเพิ่มได้เลย</p>
       ) : (
         <div className="score-grid">
           {favorites.map((fav) => {
@@ -140,6 +111,25 @@ export default function FavoritesPage() {
                 <header>
                   {fav.nickname || bike?.model || `จักรยาน #${fav.bicycle_id}`}
                 </header>
+                {editingId === fav.id ? (
+                  <form className="fav-rename-form" onSubmit={handleRename}>
+                    <input
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      placeholder="ตั้งชื่อเรียก เช่น คันประจำ"
+                      maxLength={100}
+                      aria-label="ชื่อเรียกรายการโปรด"
+                    />
+                    <div className="fav-rename-actions">
+                      <button className="btn btn-sm btn-primary" type="submit" disabled={editSaving}>
+                        {editSaving ? 'กำลังบันทึก...' : 'บันทึก'}
+                      </button>
+                      <button className="btn btn-sm btn-ghost" type="button" onClick={cancelEdit} disabled={editSaving}>
+                        ยกเลิก
+                      </button>
+                    </div>
+                  </form>
+                ) : null}
                 <ul className="score-events">
                   <li>
                     <span className="score-delta plus">♥</span>
@@ -149,6 +139,15 @@ export default function FavoritesPage() {
                         {bike?.station || 'สถานี -'} · เพิ่มเมื่อ {formatDateTime(fav.created_at)}
                       </span>
                     </span>
+                    {editingId === fav.id ? null : (
+                      <button
+                        className="btn btn-sm btn-ghost"
+                        type="button"
+                        onClick={() => startEdit(fav)}
+                      >
+                        แก้ชื่อ
+                      </button>
+                    )}
                     <button
                       className="btn btn-sm btn-ghost"
                       type="button"

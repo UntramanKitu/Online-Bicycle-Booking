@@ -92,6 +92,17 @@ def get_reviews_by_bicycle(bicycle_id: int, db: Session = Depends(get_db)):
     return db.scalars(query).all()
 
 
+@router.get("/user/{user_id}", response_model=list[ReviewResponse])
+def get_reviews_by_user(user_id: int, db: Session = Depends(get_db)):
+    """รีวิวที่ผู้ใช้คนนี้เขียนไว้ — ใช้นับจำนวนในหน้าโปรไฟล์"""
+    query = (
+        select(Review)
+        .where(Review.user_id == user_id)
+        .order_by(Review.created_at.desc(), Review.id.desc())
+    )
+    return db.scalars(query).all()
+
+
 # คะแนนเฉลี่ยและจำนวนรีวิว คำนวณด้วย SQL (AVG, COUNT)
 @router.get("/bicycle/{bicycle_id}/summary", response_model=ReviewSummary)
 def get_review_summary(bicycle_id: int, db: Session = Depends(get_db)):

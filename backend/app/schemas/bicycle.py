@@ -15,9 +15,8 @@ class BicycleResponse(BaseModel):
 
 
 class BicycleCreate(BaseModel):
-    """เพิ่มจักรยานใหม่ (แอดมิน) — code เว้นว่างได้ ระบบจะสร้างให้เองเป็น BIKE-xxx"""
+    """เพิ่มจักรยานใหม่ (แอดมิน) — code ระบบสร้างให้ตามประเภท ไม่ต้องส่งมา"""
 
-    code: str | None = Field(None, max_length=20)
     type: str = Field("ธรรมดา", max_length=50)
     model: str = Field("จักรยาน", max_length=100)
     station: str = Field("สถานีหลัก", max_length=100)

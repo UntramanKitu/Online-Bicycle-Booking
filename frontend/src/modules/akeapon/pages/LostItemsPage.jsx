@@ -11,9 +11,9 @@ const STATUS_LABELS = {
   found: '✅ เจอแล้ว',
 }
 
-// ระบบของหายของผู้ใช้ — เชื่อม backend `/api/lost-items` จริง (ไม่ใช่ localStorage แล้ว)
+// ระบบของหาย — หน้านี้ (เข้าจากหน้า Home) แสดง "ทั้งระบบ" ทุกคน · ส่วนของตัวเองดูที่แท็บ 🎒 ของหายในโปรไฟล์
 export default function LostItemsPage() {
-  const { userId, usersLoading } = useCurrentUser()
+  const { userId, usersLoading, getUserName, isAdmin } = useCurrentUser()
   const [items, setItems] = useState([])
   const [bikes, setBikes] = useState([])
   const [loading, setLoading] = useState(true)
@@ -26,7 +26,7 @@ export default function LostItemsPage() {
     setLoading(true)
     try {
       const [itemRes, bikeRes] = await Promise.all([
-        api.get(`/lost-items/user/${userId}`),
+        api.get('/lost-items'), // ทั้งระบบ (ทุกคน) — ของตัวเองอยู่ที่แท็บในโปรไฟล์
         api.get('/bicycles'),
       ])
       setItems(itemRes.data || [])
@@ -43,7 +43,7 @@ export default function LostItemsPage() {
     // เลื่อนไป task ถัดไป — กันกฎ react-hooks/set-state-in-effect
     const timer = window.setTimeout(() => load(), 0)
     return () => window.clearTimeout(timer)
-  }, [userId, usersLoading]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [userId, usersLoading])
 
   const bikeById = useMemo(() => new Map(bikes.map((b) => [b.id, b])), [bikes])
 
@@ -104,7 +104,7 @@ export default function LostItemsPage() {
       <div className="section-head">
         <div>
           <h1 className="section-title">ของหาย</h1>
-          <p className="section-subtitle">แจ้งสิ่งของที่ทำหายและติดตามสถานะ</p>
+          <p className="section-subtitle">ของหายทั้งระบบ — ดูได้ทุกคน แก้ไขได้เฉพาะของตัวเอง (ของคุณอยู่ที่แท็บโปรไฟล์ด้วย)</p>
         </div>
         <button className="btn btn-primary" type="button" onClick={() => setShowForm((v) => !v)}>
           {showForm ? '× ปิดฟอร์ม' : '+ แจ้งของหาย'}
@@ -194,7 +194,7 @@ export default function LostItemsPage() {
                   <span className="score-reason">
                     <strong>{item.location || 'ไม่ระบุสถานที่'}</strong>
                     <span className="muted small">
-                      {item.description || 'ไม่มีรายละเอียด'} · แจ้งเมื่อ {formatDateTime(item.created_at)}
+                      {item.description || 'ไม่มีรายละเอียด'} · แจ้งเมื่อ {formatDateTime(item.created_at)} · ผู้แจ้ง {getUserName(item.user_id)}
                       {item.bicycle_id && bikeById.get(item.bicycle_id)
                         ? ` · ${bikeById.get(item.bicycle_id).code}`
                         : ''}
@@ -202,16 +202,18 @@ export default function LostItemsPage() {
                   </span>
                 </li>
               </ul>
-              <div className="confirm-actions">
-                {item.status !== 'found' && (
-                  <button className="btn btn-sm btn-primary" type="button" onClick={() => markFound(item)}>
-                    เจอแล้ว
+              {(Number(item.user_id) === Number(userId) || isAdmin) && (
+                <div className="confirm-actions">
+                  {item.status !== 'found' && (
+                    <button className="btn btn-sm btn-primary" type="button" onClick={() => markFound(item)}>
+                      เจอแล้ว
+                    </button>
+                  )}
+                  <button className="btn btn-sm btn-ghost" type="button" onClick={() => handleDelete(item.id)}>
+                    ลบ
                   </button>
-                )}
-                <button className="btn btn-sm btn-ghost" type="button" onClick={() => handleDelete(item.id)}>
-                  ลบ
-                </button>
-              </div>
+                </div>
+              )}
             </section>
           ))}
         </div>

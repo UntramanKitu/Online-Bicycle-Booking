@@ -40,6 +40,8 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); line
   display: flex; align-items: center; gap: 24px; height: 64px;
 }
 .brand { display: flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 700; letter-spacing: 0.5px; }
+.brand-link { color: inherit; text-decoration: none; }
+.brand-link:hover { opacity: 0.85; }
 .brand-icon { font-size: 26px; }
 .nav { display: flex; gap: 6px; flex: 1; }
 .nav-item {
@@ -684,6 +686,30 @@ h1, h2, h3, .brand-text { font-family: 'Kanit', sans-serif; }
   .admin-stats { grid-template-columns: 1fr; }
 }
 
+/* ---------- หน้าโปรไฟล์ (/profile) ---------- */
+.profile-card { display: flex; gap: 20px; align-items: center; margin-bottom: 16px; }
+.profile-avatar {
+  width: 72px; height: 72px; flex-shrink: 0; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--color-dark-teal); color: #fff;
+  font-size: 26px; font-weight: 700; font-family: 'Kanit', sans-serif;
+  letter-spacing: 1px;
+}
+.profile-info h2 { margin: 0 0 4px; font-size: 20px; }
+.profile-info p { margin: 0; }
+.profile-badges { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
+.profile-points { font-size: 14px; font-weight: 700; color: var(--color-dark-teal); }
+.profile-form { margin-bottom: 16px; align-items: end; }
+.profile-form-note { grid-column: 1 / -1; margin: 0; }
+.profile-stats-title { margin: 8px 0 12px; font-size: 17px; }
+.profile-stat-card { text-decoration: none; color: inherit; transition: transform .15s ease, box-shadow .15s ease; }
+.profile-stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(0,0,0,.08); }
+.profile-stat-icon { font-size: 22px; }
+@media (max-width: 768px) {
+  .profile-card { flex-direction: column; text-align: center; }
+  .profile-badges { justify-content: center; }
+}
+
 /* ====== TICKETS PAGE — Admin toolbar & status filter ====== */
 .admin-ticket-toolbar {
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
@@ -703,22 +729,24 @@ h1, h2, h3, .brand-text { font-family: 'Kanit', sans-serif; }
 
 /* ====== ค้นหา/เรียงจักรยาน (M10) ====== */
 .bike-search-bar {
-  display: flex; gap: 10px; flex-wrap: wrap; width: 100%;
-  margin-top: 12px;
+  display: flex; gap: 5px; flex-wrap: wrap; width: 100%;
+  margin-top: 6px;
 }
 .bike-search-bar input {
-  flex: 1 1 240px;
+  flex: 1 1 20px;
   padding: 10px 14px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  font: inherit;
+  font: default; font-size: 15px; color: var(--text);
   background: var(--surface);
+  
 }
 .bike-search-bar select {
   padding: 10px 14px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  font: inherit;
+  font: default; font-size: 15px; color: var(--text);
+  text-align: center;
   background: var(--surface);
 }
 
@@ -735,5 +763,18 @@ h1, h2, h3, .brand-text { font-family: 'Kanit', sans-serif; }
 }
 .report-image-preview a { line-height: 0; }
 .ticket-card .report-image-preview { margin-bottom: 8px; }
+
+/* กล่อง welcome ใน sidebar → คลิกไปหน้าโปรไฟล์ */
+.welcome-link {
+  display: block; text-decoration: none; color: inherit; cursor: pointer;
+  border-radius: 10px; transition: background .15s;
+}
+.welcome-link:hover { background: var(--bg); }
+.welcome-hint {
+  display: inline-block; margin-top: 5px;
+  font-size: 12px; font-weight: 700; color: var(--color-sage);
+}
+.welcome-link:hover .welcome-hint { color: var(--color-deep-teal); }
+
 
 

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useCurrentUser } from '../context/currentUser'
 import './home.css'
 
-// ศูนย์รวมทางเข้าทุกฟีเจอร์ — จัดกลุ่มตามผู้พัฒนาแต่ละโมดูล
+// ศูนย์รวมทางเข้าทุกฟีเจอร์ (sidebar เหลือแค่ จอง/ปั่นกลุ่ม — ที่เหลือเข้าจากหน้านี้)
 const SECTIONS = [
   {
     title: 'เช่า & ปั่น',
@@ -27,7 +27,7 @@ const SECTIONS = [
     items: [
       { to: '/scores', icon: '🏆', label: 'คะแนน & บทลงโทษ', desc: 'แต้มพฤติกรรมและประวัติลงโทษ' },
       { to: '/favorites', icon: '♥', label: 'รายการโปรด', desc: 'จักรยานคู่ใจที่กดไว้' },
-      { to: '/lost-items', icon: '🎒', label: 'ของหาย', desc: 'แจ้งและติดตามสิ่งของที่ทำหาย' },
+      { to: '/lost-items', icon: '🎒', label: 'ของหาย', desc: 'ดูของหายทั้งระบบ · แจ้งของตัวเองที่โปรไฟล์' },
     ],
   },
   {
