@@ -33,7 +33,7 @@ class StaffAccessRequestForm(forms.ModelForm):
         # วนลูปตกแต่งทุกกล่องข้อความให้สวยงาม
         for field in self.fields.values():
             field.widget.attrs.update({
-                'class': 'w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 mb-4'
+                'class': 'bs-input mb-4'
             })
             
         # บังคับให้ช่อง "ระดับสิทธิ์ที่ต้องการ" เลือกได้แค่ 2 แบบนี้เท่านั้น (กันคนแอบส่งค่าแปลกๆ มา)
@@ -61,7 +61,7 @@ class StaffApproveForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
             field.widget.attrs.update({
-                'class': 'w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 mb-2'
+                'class': 'bs-input mb-2'
             })
 
 # -------------------------------------------------------------------------
@@ -94,7 +94,7 @@ class StaffUpdateForm(forms.ModelForm):
         # ตกแต่งทุกช่องด้วย Tailwind CSS
         for field in self.fields.values():
             field.widget.attrs.update({
-                'class': 'w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 mb-2'
+                'class': 'bs-input mb-2'
             })
 
     # เขียนฟังก์ชันเซฟ (save) ทับของเดิม เพื่อให้มันเซฟข้อมูลลงทั้ง 2 ตาราง!

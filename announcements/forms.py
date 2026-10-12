@@ -36,7 +36,7 @@ class CampusAnnouncementForm(forms.ModelForm):
     
     # ดึงคลาสที่เราทำไว้ข้างบน มาใช้เป็นช่องอัปโหลด "ไฟล์แนบ"
     attachments = MultipleFileField(
-        widget=MultipleFileInput(attrs={'multiple': True, 'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300'}),
+        widget=MultipleFileInput(attrs={'multiple': True, 'class': 'bs-input'}),
         required=False, # ไม่บังคับแนบไฟล์
         label="ไฟล์แนบ (สามารถเลือกได้หลายไฟล์)"
     )
@@ -50,23 +50,23 @@ class CampusAnnouncementForm(forms.ModelForm):
             'cover_image', 'publish_at', 'expire_at', 'is_pinned'
         ]
         
-        # ตกแต่งหน้าตาฟอร์มแต่ละช่อง ด้วย Tailwind CSS (สังเกตพวก w-full, px-3, border, rounded-lg)
+        # ตกแต่งหน้าตาฟอร์มแต่ละช่อง ด้วยคลาส bs-* (ระบบดีไซน์ BikeShare)
         widgets = {
-            'title': forms.TextInput(attrs={'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300'}),
-            'content': forms.Textarea(attrs={'rows': 5, 'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300'}),
-            'category': forms.Select(attrs={'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300'}),
-            'priority': forms.Select(attrs={'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300'}),
-            'target_audience': forms.Select(attrs={'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300'}),
+            'title': forms.TextInput(attrs={'class': 'bs-input'}),
+            'content': forms.Textarea(attrs={'rows': 5, 'class': 'bs-input'}),
+            'category': forms.Select(attrs={'class': 'bs-input'}),
+            'priority': forms.Select(attrs={'class': 'bs-input'}),
+            'target_audience': forms.Select(attrs={'class': 'bs-input'}),
             
             # ช่องเลือกรูปหน้าปก
-            'cover_image': forms.ClearableFileInput(attrs={'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300'}),
+            'cover_image': forms.ClearableFileInput(attrs={'class': 'bs-input'}),
             
             # ช่องเลือกเวลา (เปลี่ยนชนิด input เป็น datetime-local เพื่อให้มีปฏิทินและนาฬิกาเด้งขึ้นมาให้เลือก)
-            'publish_at': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300'}),
-            'expire_at': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300'}),
+            'publish_at': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'bs-input'}),
+            'expire_at': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'bs-input'}),
             
             # ช่องติ๊กถูก ปักหมุด
-            'is_pinned': forms.CheckboxInput(attrs={'class': 'h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded'}),
+            'is_pinned': forms.CheckboxInput(attrs={'class': 'bs-check'}),
         }
         
         # เปลี่ยนป้ายกำกับให้เป็นภาษาไทยเพื่อความเข้าใจง่าย
@@ -108,8 +108,8 @@ class AnnouncementCategoryForm(forms.ModelForm):
         model = AnnouncementCategory
         fields = ['name', 'is_active']
         widgets = {
-            'name': forms.TextInput(attrs={'class': 'w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300'}),
-            'is_active': forms.CheckboxInput(attrs={'class': 'h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded'}),
+            'name': forms.TextInput(attrs={'class': 'bs-input'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'bs-check'}),
         }
         labels = {
             'name': 'ชื่อหมวดหมู่',

@@ -1,27 +1,27 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-3xl font-bold text-gray-900">{{ title }}</h1>
-        <a href="{% url 'announcements:category_list' %}" class="text-indigo-600 hover:text-indigo-900">ยกเลิก</a>
+<div class="bs-section" style="max-width:620px;margin:0 auto">
+    <div class="bs-section-head">
+        <h1 class="bs-section-title">{{ title }}</h1>
+        <a href="{% url 'announcements:category_list' %}" class="bs-btn bs-btn-ghost">ยกเลิก</a>
     </div>
 
-    <div class="bg-white rounded-lg shadow p-6">
-        <form method="POST" class="space-y-6">
+    <div class="bs-panel">
+        <form method="POST">
             {% csrf_token %}
-            
-            {% for field in form %}
-            <div>
-                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">{{ field.label }}</label>
-                {{ field }}
-                {% if field.errors %}
-                <p class="mt-1 text-sm text-red-600">{{ field.errors.0 }}</p>
-                {% endif %}
-            </div>
-            {% endfor %}
 
-            <div class="mt-8 pt-6 border-t border-gray-200">
-                <button type="submit" class="w-full bg-indigo-600 text-white px-6 py-2 rounded-md hover:bg-indigo-700 transition">บันทึกหมวดหมู่</button>
+            <div class="bs-form-grid">
+                {% for field in form %}
+                <div class="bs-field bs-field-wide">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% for error in field.errors %}<p class="bs-field-error">{{ error }}</p>{% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="bs-form-actions" style="border-top:1px solid var(--bs-border);margin-top:18px;padding-top:16px">
+                <button type="submit" class="bs-btn bs-btn-primary">บันทึกหมวดหมู่</button>
             </div>
         </form>
     </div>

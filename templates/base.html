@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}BikeShare{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/bikeshare.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bs-body">
+<div class="bs-shell">
+
+    <header class="bs-header">
+        <div class="bs-header-inner">
+            <button class="bs-menu-btn" type="button" id="menu-toggle" aria-label="Toggle navigation">
+                <span></span>
+            </button>
+            <a class="bs-brand" href="{% url 'core:home' %}">
+                <span class="bs-brand-mark">⌁</span> BikeShare
+            </a>
+            <div class="bs-userbox">
+                {% if user.is_authenticated %}
+                    <span class="bs-username">{{ user.get_full_name|default:user.username }} &middot; {{ user.get_role_display }}</span>
+                    <form method="post" action="{% url 'accounts:logout' %}" style="display:inline">
+                        {% csrf_token %}
+                        <button class="bs-logout" type="submit">ออกจากระบบ</button>
+                    </form>
+                {% else %}
+                    <a class="bs-logout" href="{% url 'accounts:login' %}" style="text-decoration:none">เข้าสู่ระบบ</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <div class="bs-layout">
+        <aside class="bs-sidebar" id="sidebar">
+            <a class="bs-welcome" href="{% url 'core:home' %}">
+                {% if user.is_authenticated %}สวัสดี, <strong>{{ user.first_name|default:user.username }}</strong>{% else %}ยินดีต้อนรับ{% endif %}
+            </a>
+            <nav class="bs-nav">
+                {% block nav %}{% endblock %}
+            </nav>
+        </aside>
+
+        <main class="bs-page">
+            {% if messages %}
+                {% for message in messages %}
+                <div class="bs-alert bs-alert-{{ message.tags|default:'info' }}" role="alert">
+                    <span>{{ message }}</span>
+                </div>
+                {% endfor %}
+            {% endif %}
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <footer class="bs-footer">&copy; BikeShare &mdash; ระบบแชร์จักรยานสำหรับมหาวิทยาลัย</footer>
+</div>
+
+<script>
+    (function () {
+        var btn = document.getElementById('menu-toggle');
+        var sidebar = document.getElementById('sidebar');
+        if (btn && sidebar) {
+            btn.addEventListener('click', function () {
+                sidebar.classList.toggle('hidden');
+            });
+        }
+    })();
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

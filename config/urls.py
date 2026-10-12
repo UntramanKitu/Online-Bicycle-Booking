@@ -36,6 +36,10 @@ urlpatterns = [
     # path แบบเว้นว่าง '' หมายถึงถ้าพิมพ์แค่ชื่อเว็บ http://.../ เปล่าๆ ไม่ต่อท้ายอะไรเลย
     # ให้วิ่งไปให้ระบบ core (core.urls) จัดการวาดหน้าแรกให้
     path('', include('core.urls')), 
+
+    # 6. เส้นทางสำหรับ Social Auth (ล็อกอินผ่าน Google ฯลฯ)
+    # เช่น /social-auth/login/google-oauth2/ (เริ่มล็อกอิน) และ /social-auth/complete/google-oauth2/ (รับผลกลับ)
+    path('social-auth/', include('social_django.urls', namespace='social')),
 ]
 
 # =========================================================================

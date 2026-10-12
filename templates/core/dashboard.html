@@ -1,0 +1,141 @@
+{% extends "core/base.html" %}
+{% load ui %}
+
+{% block title %}แดชบอร์ด{% endblock %}
+
+{% block content %}
+<div class="bs-section">
+    <div class="bs-section-head">
+        <div>
+            <h1 class="bs-section-title">แดชบอร์ด</h1>
+            <p class="bs-section-sub">{% now "l, j F Y" %} &mdash; พร้อมปั่น {{ available_bikes }} จาก {{ bicycle_count }} คัน</p>
+        </div>
+        <div class="bs-head-actions">
+            <a class="bs-btn bs-btn-ghost" href="{% url 'core:bicycle_create' %}">+ เพิ่มจักรยาน</a>
+            <a class="bs-btn bs-btn-primary" href="{% url 'core:maintenance_create' %}">แจ้งซ่อม</a>
+        </div>
+    </div>
+
+    <!-- Hero: fleet at a glance -->
+    <section class="bs-panel">
+        {% if bicycle_count %}
+        <div class="bs-stat" style="flex-wrap:wrap;gap:6px 14px">
+            <span class="bs-stat-num">{{ available_bikes }}</span>
+            <span class="bs-stat-label" style="font-size:15px">of {{ bicycle_count }} bicycle{{ bicycle_count|pluralize }} {{ available_bikes|pluralize:"is,are" }} ready to ride</span>
+        </div>
+
+        <div class="bs-tabs" style="margin-top:16px" role="list" aria-label="Every bicycle, coloured by status">
+            {% for bike in fleet %}
+            <a role="listitem" class="bs-tab bs-badge bs-badge-{{ bike.status }}" style="cursor:pointer"
+               href="{% url 'core:bicycles' %}?q={{ bike.bike_code|urlencode }}"
+               title="{{ bike.bike_code }}: {{ bike.brand }} {{ bike.model }}, {{ bike.get_status_display }}">
+                {{ bike.bike_code }}
+            </a>
+            {% endfor %}
+            {% if fleet_hidden %}<span class="bs-badge bs-badge-muted">+{{ fleet_hidden }} more</span>{% endif %}
+        </div>
+
+        <div class="bs-tabs" style="margin-top:16px">
+            {% for item in fleet_legend %}
+            <a class="bs-tab" href="{% url 'core:bicycles' %}?status={{ item.value }}">
+                {{ item.label }} <small>{{ item.count }}</small>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="bs-empty">
+            <strong>No bicycles in the fleet yet.</strong>
+            <div>Add the first bicycle and it will show up here.</div>
+            <div><a class="bs-btn bs-btn-primary bs-btn-sm" href="{% url 'core:bicycle_create' %}">Add bicycle</a></div>
+        </div>
+        {% endif %}
+    </section>
+
+    <div class="bs-grid-2">
+        <div class="bs-section" style="gap:16px">
+            <!-- Needs attention -->
+            <section class="bs-panel">
+                <div class="bs-section-head" style="margin-bottom:12px">
+                    <h2 style="font-size:18px;color:var(--bs-dark);margin:0">Needs attention{% if open_count %} <span class="bs-badge bs-badge-pending">{{ open_count }} open</span>{% endif %}</h2>
+                    <a class="bs-btn bs-btn-ghost bs-btn-sm" href="{% url 'core:maintenance' %}">View all repairs</a>
+                </div>
+                {% if open_maintenance %}
+                <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px">
+                    {% for row in open_maintenance %}
+                    <li style="display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid var(--bs-border);border-radius:10px;background:var(--bs-surface2)">
+                        <span class="bs-dot bs-badge-{{ row.status }}" title="{{ row.get_status_display }}" style="margin-top:6px"></span>
+                        <div style="flex:1;min-width:0">
+                            <p style="margin:0 0 2px;font-weight:700">{{ row.bicycle.bike_code }} <span class="bs-muted" style="font-weight:400;font-size:12.5px">&middot; {{ row.get_type_display }}, {{ row.get_status_display|lower }}</span></p>
+                            <p class="bs-muted" style="margin:0;font-size:13px">{{ row.description|truncatechars:110 }}</p>
+                            <p class="bs-muted" style="margin:4px 0 0;font-size:12px">Reported by {{ row.reported_by.first_name }} {{ row.reported_by.last_name }}, {{ row.created_at|age }}{% if row.created_at|age != "just now" %} ago{% endif %}</p>
+                        </div>
+                        {% include "core/_maintenance_actions.html" with row=row next_url=request.get_full_path %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="bs-empty">
+                    <strong>No open repairs</strong>
+                    <div>New reports will show up here.</div>
+                    <div><a class="bs-btn bs-btn-ghost bs-btn-sm" href="{% url 'core:maintenance_create' %}">Report maintenance</a></div>
+                </div>
+                {% endif %}
+            </section>
+
+            <!-- Most ridden -->
+            <section class="bs-panel">
+                <div class="bs-section-head" style="margin-bottom:12px">
+                    <h2 style="font-size:18px;color:var(--bs-dark);margin:0">Most ridden</h2>
+                    <a class="bs-btn bs-btn-ghost bs-btn-sm" href="{% url 'core:bicycles' %}">View fleet</a>
+                </div>
+                {% for bike in most_ridden %}
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+                    <div style="flex:1;min-width:0">
+                        <p style="margin:0 0 5px;font-weight:700;font-size:14px">{{ bike.bike_code }} <span class="bs-muted" style="font-weight:400;font-size:12.5px">{{ bike.brand }} {{ bike.model }}</span></p>
+                        <div style="height:7px;border-radius:999px;background:var(--bs-bg);overflow:hidden">
+                            <i style="display:block;height:100%;width:{{ bike.rides_pct }}%;background:var(--bs-emerald);border-radius:999px"></i>
+                        </div>
+                    </div>
+                    <strong style="font-family:var(--bs-head);font-size:14px">{{ bike.total_rides|floatformat:"0g" }}</strong>
+                </div>
+                {% empty %}
+                <p class="bs-muted" style="font-size:13.5px">Ride counts will appear here once bicycles have been used.</p>
+                {% endfor %}
+            </section>
+        </div>
+
+
+        <div class="bs-section" style="gap:16px">
+            <!-- Repairs -->
+            <section class="bs-panel">
+                <div class="bs-section-head" style="margin-bottom:12px">
+                    <h2 style="font-size:18px;color:var(--bs-dark);margin:0">Repairs <span class="bs-muted" style="font-weight:400;font-size:13px">{{ maintenance_count }} total</span></h2>
+                </div>
+                <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px">
+                    {% for item in repair_legend %}
+                    <li>
+                        <a href="{% url 'core:maintenance' %}?status={{ item.value }}" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--bs-border);border-radius:9px;text-decoration:none;color:inherit">
+                            <span class="bs-badge bs-badge-{{ item.value }}">{{ item.label }}</span>
+                            <strong style="margin-left:auto;font-family:var(--bs-head)">{{ item.count }}</strong>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+                <p style="display:flex;justify-content:space-between;align-items:center;margin:14px 0 0;padding-top:12px;border-top:1px solid var(--bs-border);font-size:14px">
+                    <span class="bs-muted">Spent on completed repairs</span>
+                    <strong style="font-family:var(--bs-head);font-size:17px;color:var(--bs-dark)">฿{{ repair_cost|floatformat:"2g" }}</strong>
+                </p>
+            </section>
+
+            <!-- Users -->
+            <section class="bs-panel">
+                <div class="bs-section-head" style="margin-bottom:12px">
+                    <h2 style="font-size:18px;color:var(--bs-dark);margin:0">Users <span class="bs-muted" style="font-weight:400;font-size:13px">{{ user_count }} total</span></h2>
+                </div>
+                <p class="bs-muted" style="font-size:13.5px;margin:0">Accounts are managed via <a href="/admin/" style="color:var(--bs-emerald);font-weight:600">Django admin</a> and the accounts app.</p>
+            </section>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

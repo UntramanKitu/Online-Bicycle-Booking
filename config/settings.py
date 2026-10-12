@@ -45,6 +45,9 @@ INSTALLED_APPS = [
     'audit',         # ระบบบันทึกประวัติ (Audit Log)
     'core',          # หน้าหลักและโครงสร้างพื้นฐาน
     'dashboard',     # ระบบกระดานสรุปข้อมูล (ถ้ามี)
+
+    # Social Auth (ล็อกอินผ่าน Google / โซเชียลมีเดีย)
+    'social_django',
 ]
 
 MIDDLEWARE = [
@@ -62,6 +65,13 @@ ROOT_URLCONF = 'config.urls' # ไฟล์หลักที่จัดกา�
 # ตั้งค่าให้ระบบใช้ UnifiedUser (จาก accounts app) เป็นบัญชีผู้ใช้หลักแทน User มาตรฐานของ Django
 AUTH_USER_MODEL = 'accounts.UnifiedUser'
 
+# ล็อกอินด้วย "ชื่อผู้ใช้ (username)" มาตรฐานของ Django
+# เพิ่ม GoogleOAuth2 เพื่อให้สามารถล็อกอินด้วยบัญชี Google ได้ด้วย
+AUTHENTICATION_BACKENDS = [
+    'social_core.backends.google.GoogleOAuth2',            # ล็อกอินผ่าน Google
+    'django.contrib.auth.backends.ModelBackend',           # ล็อกอินด้วยชื่อผู้ใช้ + รหัสผ่าน
+]
+
 # เส้นทาง URL ที่เกี่ยวข้องกับการล็อกอิน
 LOGIN_URL = 'accounts:login'                 # หน้าล็อกอิน
 LOGIN_REDIRECT_URL = 'accounts:role_redirect' # ล็อกอินเสร็จให้ไปไหน (ไปเช็ค Role)
@@ -77,6 +87,10 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'social_django.context_processors.backends',
+                'social_django.context_processors.login_redirect',
+                'core.context_processors.nav_counts',
+                'core.context_processors.social_providers',
             ],
         },
     },
@@ -90,6 +104,44 @@ from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv(BASE_DIR / '.env')
+
+
+# =========================================================================
+# การตั้งค่า Social Auth (ล็อกอินผ่าน Google)
+# =========================================================================
+# ค่า GOOGLE_OAUTH2_KEY / GOOGLE_OAUTH2_SECRET ถูกอ่านจากไฟล์ .env
+# (ดูขั้นตอนการสมัคร Google OAuth ในไฟล์ GOOGLE_OAUTH_SETUP.md)
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.environ.get("GOOGLE_OAUTH2_KEY", "")
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.environ.get("GOOGLE_OAUTH2_SECRET", "")
+
+# ขอเฉพาะข้อมูล e-mail และโปรไฟล์พื้นฐานจาก Google (ไม่ขออะไรเกินจำเป็น)
+SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = [
+    "https://www.googleapis.com/auth/userinfo.email",
+    "https://www.googleapis.com/auth/userinfo.profile",
+]
+SOCIAL_AUTH_GOOGLE_OAUTH2_AUTH_EXTRA_ARGUMENTS = {"access_type": "online"}
+
+# ใช้ pipeline ของเราเอง (สร้าง username อัตโนมัติ + ผูกกับ UnifiedUser)
+SOCIAL_AUTH_PIPELINE = (
+    "social_core.pipeline.social_auth.social_details",
+    "social_core.pipeline.social_auth.social_uid",
+    "social_core.pipeline.social_auth.auth_allowed",
+    "social_core.pipeline.social_auth.social_user",
+    "accounts.pipeline.create_or_get_user",  # สร้าง/จับคู่ผู้ใช้กับ UnifiedUser
+    "social_core.pipeline.social_auth.associate_user",
+    "social_core.pipeline.social_auth.load_extra_data",
+    "social_core.pipeline.user.user_details",
+)
+
+# หน้าหลังล็อกอิน/ออก และข้อผิดพลาด เด้งกลับเข้าระบบเดิมของเรา
+LOGIN_REDIRECT_URL = "accounts:role_redirect"
+LOGIN_ERROR_URL = "accounts:login"
+
+# ระบุ field ที่ social_django ต้องเก็บไว้ใน session ระหว่าง redirect (เช่น state กัน CSRF)
+SOCIAL_AUTH_FIELDS_STORED_IN_SESSION = ["state"]
+SOCIAL_AUTH_REDIRECT_IS_HTTPS = False  # ตั้งเป็น True เมื่อ deploy จริง (ใช้ HTTPS)
+SOCIAL_AUTH_URL_NAMESPACE = "social"
+
 
 # การตั้งค่าฐานข้อมูล (Database)
 # ปัจจุบันใช้ SQLite3 (ฐานข้อมูลแบบไฟล์เดียว) เหมาะสำหรับรันพัฒนาในเครื่อง
@@ -135,6 +187,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+STATICFILES_DIRS = [BASE_DIR / 'core' / 'static']
 
 # Media files (Uploaded by users)
 MEDIA_URL = '/media/'

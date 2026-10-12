@@ -1,87 +1,71 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-3xl font-bold text-gray-900">ประกาศข่าวสาร</h1>
+<div class="bs-section">
+    <div class="bs-section-head">
+        <div>
+            <h1 class="bs-section-title">ประกาศข่าวสาร</h1>
+            <p class="bs-section-sub">ข่าวสารและกิจกรรมจากมหาวิทยาลัย</p>
+        </div>
         {% if request.user.is_authenticated and request.user.role in 'ADMIN,MANAGER' %}
-        <a href="{% url 'announcements:manage_list' %}" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition">จัดการประกาศ</a>
+        <a href="{% url 'announcements:manage_list' %}" class="bs-btn bs-btn-primary">จัดการประกาศ</a>
         {% endif %}
     </div>
 
     <!-- Filters & Search -->
-    <div class="bg-white p-4 rounded-lg shadow mb-6">
-        <form method="GET" class="flex flex-col md:flex-row gap-4">
-            <input type="text" name="q" value="{{ query }}" placeholder="ค้นหาประกาศ..." class="flex-grow px-4 py-2 border rounded-md focus:ring-indigo-500 focus:border-indigo-500">
-            <select name="category" class="px-4 py-2 border rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+    <div class="bs-panel">
+        <form method="GET" class="bs-filterbar" style="display:flex;flex-wrap:wrap;gap:12px">
+            <div class="bs-search" style="flex:1 1 260px">
+                <input type="text" name="q" value="{{ query }}" placeholder="ค้นหาประกาศ...">
+            </div>
+            <select name="category" style="padding:9px 12px;border:1px solid var(--bs-border);border-radius:9px;background:var(--bs-surface2);font-family:inherit;font-size:14px;color:inherit">
                 <option value="">ทุกหมวดหมู่</option>
                 {% for cat in categories %}
                 <option value="{{ cat.id }}" {% if selected_category == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
                 {% endfor %}
             </select>
-            <button type="submit" class="bg-gray-800 text-white px-6 py-2 rounded-md hover:bg-gray-900 transition">ค้นหา</button>
+            <button type="submit" class="bs-btn bs-btn-ghost">ค้นหา</button>
         </form>
     </div>
 
     <!-- Announcement List -->
-    <div class="space-y-4">
+    <div class="bs-grid-cards">
         {% for announcement in page_obj %}
-        <a href="{% url 'announcements:detail' announcement.id %}" class="block bg-white rounded-lg shadow hover:shadow-md transition duration-200">
-            <div class="p-6">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <div class="flex items-center gap-2 mb-2">
-                            {% if announcement.is_pinned %}
-                            <span class="bg-yellow-100 text-yellow-800 text-xs font-semibold px-2.5 py-0.5 rounded">ปักหมุด</span>
-                            {% endif %}
-                            <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">{{ announcement.category.name }}</span>
-                            {% if announcement.priority == 'URGENT' %}
-                            <span class="bg-red-100 text-red-800 text-xs font-semibold px-2.5 py-0.5 rounded">ด่วนมาก</span>
-                            {% elif announcement.priority == 'HIGH' %}
-                            <span class="bg-orange-100 text-orange-800 text-xs font-semibold px-2.5 py-0.5 rounded">ด่วน</span>
-                            {% endif %}
-                        </div>
-                        <h2 class="text-xl font-bold text-gray-900 mb-2">{{ announcement.title }}</h2>
-                        <p class="text-gray-600 text-sm mb-4 line-clamp-2">{{ announcement.content|truncatechars:150 }}</p>
-                    </div>
-                    {% if announcement.cover_image %}
-                    <div class="w-32 h-32 flex-shrink-0 ml-4 hidden sm:block">
-                        <img src="{{ announcement.cover_image.url }}" alt="Cover" class="w-full h-full object-cover rounded-md">
-                    </div>
-                    {% endif %}
-                </div>
-                <div class="mt-4 pt-4 border-t border-gray-100 flex justify-between text-sm text-gray-500">
-                    <div>เผยแพร่เมื่อ: {{ announcement.publish_at|date:"d M Y, H:i" }}</div>
-                    <div>โดย: {% if announcement.created_by %}{{ announcement.created_by.first_name|default:announcement.created_by.username }}{% else %}ระบบ{% endif %}</div>
-                </div>
+        <a href="{% url 'announcements:detail' announcement.id %}" class="bs-panel" style="display:block;transition:transform .15s, box-shadow .15s">
+            <div class="bs-tabs" style="margin-bottom:10px">
+                {% if announcement.is_pinned %}
+                <span class="bs-badge bs-badge-pin">ปักหมุด</span>
+                {% endif %}
+                <span class="bs-badge bs-badge-info" style="background:#e4ecfa;color:var(--bs-info)">{{ announcement.category.name }}</span>
+                {% if announcement.priority == 'URGENT' %}
+                <span class="bs-badge bs-badge-urgent">ด่วนมาก</span>
+                {% elif announcement.priority == 'HIGH' %}
+                <span class="bs-badge bs-badge-high">ด่วน</span>
+                {% endif %}
+            </div>
+            <h2 style="font-size:18px;color:var(--bs-dark);margin-bottom:8px">{{ announcement.title }}</h2>
+            <p class="bs-muted" style="font-size:14px;margin-bottom:14px">{{ announcement.content|truncatechars:150 }}</p>
+            <div class="bs-muted" style="display:flex;justify-content:space-between;font-size:12.5px;border-top:1px solid var(--bs-border);padding-top:10px">
+                <span>เผยแพร่เมื่อ: {{ announcement.publish_at|date:"d M Y, H:i" }}</span>
+                <span>โดย: {% if announcement.created_by %}{{ announcement.created_by.first_name|default:announcement.created_by.username }}{% else %}ระบบ{% endif %}</span>
             </div>
         </a>
         {% empty %}
-        <div class="bg-white rounded-lg shadow p-8 text-center text-gray-500">
-            ไม่พบประกาศข่าวสาร
+        <div class="bs-panel bs-empty" style="grid-column:1/-1">
+            <strong>ไม่พบประกาศข่าวสาร</strong>
         </div>
         {% endfor %}
     </div>
 
     <!-- Pagination -->
     {% if page_obj.has_other_pages %}
-    <div class="mt-8 flex justify-center">
-        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-            {% if page_obj.has_previous %}
-            <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                ก่อนหน้า
-            </a>
-            {% endif %}
-            
-            <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
-                หน้า {{ page_obj.number }} จาก {{ page_obj.paginator.num_pages }}
-            </span>
-
-            {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                ถัดไป
-            </a>
-            {% endif %}
-        </nav>
+    <div class="bs-pager">
+        {% if page_obj.has_previous %}
+        <a class="bs-btn bs-btn-ghost bs-btn-sm" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}">ก่อนหน้า</a>
+        {% endif %}
+        <span>หน้า {{ page_obj.number }} จาก {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+        <a class="bs-btn bs-btn-ghost bs-btn-sm" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}">ถัดไป</a>
+        {% endif %}
     </div>
     {% endif %}
 </div>

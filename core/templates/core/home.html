@@ -1,9 +1,88 @@
-{% extends "base.html" %}
-{% block title %}หน้าแรก{% endblock %}
+{% extends "core/base.html" %}
+
+{% block title %}หน้าแรก - BikeShare{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto mt-10 bg-white rounded-lg shadow p-8">
-    <h1 class="text-2xl font-bold mb-2">ยินดีต้อนรับ, {{ user.username }}</h1>
-    <p class="text-gray-600">สิทธิ์การใช้งาน: {{ user.get_role_display }}</p>
+<div class="bs-section">
+
+    <section class="bs-hero">
+        <div>
+            <h1>สวัสดี, {% if user.is_authenticated %}{{ user.first_name|default:user.username }}{% else %}ผู้ใช้{% endif %} &#128075;</h1>
+            <p>ศูนย์กลางระบบ BikeShare — เลือกเมนูด้านล่างเพื่อใช้งานได้ทันที</p>
+        </div>
+        <div class="bs-tabs" style="align-items:center">
+            {% if user.is_authenticated %}
+                {% if user.role == 'ADMIN' %}
+                    <span class="bs-badge bs-badge-admin">แอดมิน</span>
+                {% elif user.role == 'MANAGER' %}
+                    <span class="bs-badge bs-badge-manager">เจ้าหน้าที่</span>
+                {% else %}
+                    <span class="bs-badge bs-badge-student">ผู้ใช้ทั่วไป</span>
+                {% endif %}
+            {% else %}
+                <a class="bs-btn bs-btn-primary" href="{% url 'accounts:login' %}">เข้าสู่ระบบ</a>
+            {% endif %}
+        </div>
+    </section>
+
+    <section class="bs-home-section">
+        <div class="bs-home-head">
+            <h2>เช่า &amp; ปั่น</h2>
+            <span class="bs-home-owner">โมดูล: BikeShare</span>
+        </div>
+        <div class="bs-home-grid">
+            <a class="bs-home-card" href="{% url 'core:bicycles' %}">
+                <span class="bs-home-icon" aria-hidden="true">&#128692;</span>
+                <span class="bs-home-card-body">
+                    <strong>จักรยานทั้งหมด</strong>
+                    <span class="bs-muted">ดูรุ่น สถานะ และสถานที่ตั้งของรถ</span>
+                </span>
+                <span class="bs-home-arrow" aria-hidden="true">&#8250;</span>
+            </a>
+        </div>
+    </section>
+
+    <section class="bs-home-section">
+        <div class="bs-home-head">
+            <h2>ดูแลรถ</h2>
+            <span class="bs-home-owner">โมดูล: ซ่อมบำรุง</span>
+        </div>
+        <div class="bs-home-grid">
+            <a class="bs-home-card" href="{% url 'core:maintenance' %}">
+                <span class="bs-home-icon" aria-hidden="true">&#128295;</span>
+                <span class="bs-home-card-body">
+                    <strong>แจ้งซ่อม</strong>
+                    <span class="bs-muted">รายงานรถเสีย ติดตามสถานะซ่อม</span>
+                </span>
+                <span class="bs-home-arrow" aria-hidden="true">&#8250;</span>
+            </a>
+            <a class="bs-home-card" href="{% url 'core:maintenance_create' %}">
+                <span class="bs-home-icon" aria-hidden="true">&#10133;</span>
+                <span class="bs-home-card-body">
+                    <strong>รายงานรถเสียใหม่</strong>
+                    <span class="bs-muted">ส่งเรื่องให้ทีมซ่อมตรวจสอบ</span>
+                </span>
+                <span class="bs-home-arrow" aria-hidden="true">&#8250;</span>
+            </a>
+        </div>
+    </section>
+
+    <section class="bs-home-section">
+        <div class="bs-home-head">
+            <h2>ประกาศข่าวสาร</h2>
+            <span class="bs-home-owner">โมดูล: ประชาสัมพันธ์</span>
+        </div>
+        <div class="bs-home-grid">
+            <a class="bs-home-card" href="{% url 'announcements:list' %}">
+                <span class="bs-home-icon" aria-hidden="true">&#128226;</span>
+                <span class="bs-home-card-body">
+                    <strong>ประกาศทั้งหมด</strong>
+                    <span class="bs-muted">ข่าวสารและกิจกรรมจากมหาวิทยาลัย</span>
+                </span>
+                <span class="bs-home-arrow" aria-hidden="true">&#8250;</span>
+            </a>
+        </div>
+    </section>
+
 </div>
 {% endblock %}

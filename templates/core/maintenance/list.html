@@ -1,0 +1,59 @@
+{% extends "core/base.html" %}
+
+{% block title %}Maintenance{% endblock %}
+
+{% block content %}
+<div class="bs-section">
+    <div class="bs-section-head">
+        <div>
+            <h1 class="bs-section-title">Maintenance</h1>
+            <p class="bs-section-sub">{{ total }} record{{ total|pluralize }}</p>
+        </div>
+        <div class="bs-head-actions">
+            <a class="bs-btn bs-btn-primary" href="{% url 'core:maintenance_create' %}">+ Report maintenance</a>
+        </div>
+    </div>
+
+    {% include "core/_toolbar.html" with placeholder="Search bicycle, description or reporter" %}
+
+    <div class="bs-panel bs-table-wrap">
+        <table class="bs-table">
+            <thead>
+                <tr>
+                    <th scope="col">Bicycle</th>
+                    <th scope="col">Work</th>
+                    <th scope="col">Reported</th>
+                    <th scope="col">Status</th>
+                    <th scope="col" style="text-align:right">Cost</th>
+                    <th scope="col"><span style="position:absolute;left:-9999px">Actions</span></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for row in page_obj %}
+                <tr>
+                    <td><span class="bs-main-cell">{{ row.bicycle.bike_code }}</span><span class="bs-sub-cell">{{ row.bicycle.brand }} {{ row.bicycle.model }}</span></td>
+                    <td><span class="bs-main-cell">{{ row.get_type_display }}</span><span class="bs-sub-cell">{{ row.description|truncatechars:90 }}</span></td>
+                    <td><span>{{ row.reported_by.first_name }} {{ row.reported_by.last_name }}</span><span class="bs-sub-cell">{{ row.created_at|date:"j M Y" }}</span></td>
+                    <td><span class="bs-badge bs-badge-{{ row.status }}">{{ row.get_status_display }}</span></td>
+                    <td style="text-align:right">{% if row.cost %}฿{{ row.cost|floatformat:"2g" }}{% else %}<span class="bs-muted">-</span>{% endif %}</td>
+                    <td>{% include "core/_maintenance_actions.html" with row=row next_url=request.get_full_path %}</td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="6" class="bs-empty">
+                    {% if filtered %}
+                    <strong>No records match</strong>
+                    <div>Try a different search or clear the filters.</div>
+                    <div><a class="bs-btn bs-btn-ghost bs-btn-sm" href="{% url 'core:maintenance' %}">Clear filters</a></div>
+                    {% else %}
+                    <strong>No maintenance records yet</strong>
+                    <div>Reports will be listed here, newest first.</div>
+                    <div><a class="bs-btn bs-btn-primary bs-btn-sm" href="{% url 'core:maintenance_create' %}">Report maintenance</a></div>
+                    {% endif %}
+                </td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% include "core/_pager.html" %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block nav %}
+    <a class="bs-nav-item{% if request.resolver_match.view_name == 'core:home' %} active{% endif %}" href="{% url 'core:home' %}">หน้าแรก</a>
+    <div class="bs-nav-sep">สำหรับผู้ใช้ทั่วไป</div>
+    <a class="bs-nav-item{% if request.resolver_match.view_name == 'core:bicycles' %} active{% endif %}" href="{% url 'core:bicycles' %}">จักรยานทั้งหมด</a>
+    <a class="bs-nav-item{% if request.resolver_match.view_name == 'core:maintenance' %} active{% endif %}" href="{% url 'core:maintenance' %}">แจ้งซ่อม/สถานะซ่อม</a>
+    <a class="bs-nav-item{% if request.resolver_match.view_name == 'staff:request_access' %} active{% endif %}" href="{% url 'staff:request_access' %}">ขอสิทธิ์เจ้าหน้าที่</a>
+
+    {% if user.is_authenticated %}
+    <div class="bs-nav-sep">ประกาศข่าวสาร</div>
+    <a class="bs-nav-item{% if request.resolver_match.view_name == 'announcements:list' %} active{% endif %}" href="{% url 'announcements:list' %}">ประกาศทั้งหมด</a>
+    {% endif %}
+
+    {% if user.role == 'ADMIN' or user.role == 'MANAGER' %}
+    <div class="bs-nav-sep">จัดการ ({% if user.role == 'ADMIN' %}แอดมิน{% else %}เจ้าหน้าที่{% endif %})</div>
+    {% if user.role == 'ADMIN' %}
+    <a class="bs-nav-item{% if request.resolver_match.view_name == 'staff:staff_list' %} active{% endif %}" href="{% url 'staff:staff_list' %}">จัดการเจ้าหน้าที่</a>
+    <a class="bs-nav-item{% if request.resolver_match.view_name == 'announcements:category_list' %} active{% endif %}" href="{% url 'announcements:category_list' %}">จัดการหมวดหมู่</a>
+    {% endif %}
+    <a class="bs-nav-item{% if request.resolver_match.view_name == 'announcements:manage_list' %} active{% endif %}" href="{% url 'announcements:manage_list' %}">จัดการประกาศ</a>
+    <a class="bs-nav-item{% if request.resolver_match.view_name == 'core:maintenance' %} active{% endif %}" href="{% url 'core:maintenance' %}">ดูแลการซ่อม{% if nav_pending %} <span class="bs-badge bs-badge-pending">{{ nav_pending }}</span>{% endif %}</a>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,24 @@
+{% load ui %}
+<span class="bs-table-actions">
+    {% if row.status == 'pending' %}
+    <form method="post" action="{% url 'core:maintenance_update_status' row.id 'in_progress' %}" style="display:inline">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next_url }}">
+        <button class="bs-btn bs-btn-ghost bs-btn-sm" type="submit">เริ่มซ่อม</button>
+    </form>
+    {% endif %}
+    {% if row.status == 'pending' or row.status == 'in_progress' %}
+    <form method="post" action="{% url 'core:maintenance_update_status' row.id 'completed' %}" style="display:inline">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next_url }}">
+        <button class="bs-btn bs-btn-success bs-btn-sm" type="submit">เสร็จสิ้น</button>
+    </form>
+    <form method="post" action="{% url 'core:maintenance_update_status' row.id 'cancelled' %}" style="display:inline">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next_url }}">
+        <button class="bs-btn bs-btn-danger-sm bs-btn-sm" type="submit">ยกเลิก</button>
+    </form>
+    {% else %}
+    <span class="bs-muted">ปิดงานแล้ว</span>
+    {% endif %}
+</span>

@@ -1,0 +1,16 @@
+<div class="bs-filterbar">
+    <form method="get" class="bs-search" role="search">
+        <button type="submit" aria-label="Search">🔍</button>
+        <label class="bs-sr" for="q" style="position:absolute;left:-9999px">Search</label>
+        <input id="q" type="search" name="q" value="{{ q }}" placeholder="{{ placeholder }}" autocomplete="off">
+        {% for name, value in hidden_params %}{% if value %}<input type="hidden" name="{{ name }}" value="{{ value }}">{% endif %}{% endfor %}
+    </form>
+    <div class="bs-tabs">
+        {% for pill in pills %}
+        <a class="bs-tab{% if pill.active %} active{% endif %}" href="{{ pill.url }}"{% if pill.active %} aria-current="true"{% endif %}>{{ pill.label }} <small>{{ pill.count }}</small></a>
+        {% endfor %}
+        {% for chip in chips %}
+        <span class="bs-badge bs-badge-muted">{{ chip.label }} <a href="{{ chip.clear_url }}" aria-label="Clear filter" style="color:inherit">&times;</a></span>
+        {% endfor %}
+    </div>
+</div>

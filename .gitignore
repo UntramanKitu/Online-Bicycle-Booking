@@ -23,3 +23,8 @@ htmlcov/
 # ไฟล์ระบบปฏิบัติการ
 .DS_Store
 Thumbs.db
+
+# ไฟล์ log ของเซิร์ฟเวอร์ที่รันในเครื่อง
+runserver.err
+runserver.log
+runserver.out
